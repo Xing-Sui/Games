@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵脉复苏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0d1b2a 100%);color:#e0e6f0;min-height:100vh;overflow:hidden}
+#title-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a2744 0%,#0a0e27 70%);z-index:100}
+#title-screen h1{font-size:72px;background:linear-gradient(180deg,#7dd3fc,#38bdf8,#0284c7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:16px;margin-bottom:8px;animation:tg 3s ease-in-out infinite}
+@keyframes tg{0%,100%{filter:drop-shadow(0 0 20px rgba(56,189,248,.4))}50%{filter:drop-shadow(0 0 40px rgba(56,189,248,.7))}}
+#title-screen .subtitle{font-size:18px;color:#94a3b8;letter-spacing:8px;margin-bottom:60px}
+.title-btn{width:240px;padding:14px 0;margin:8px;background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(56,189,248,.05));border:1px solid rgba(56,189,248,.4);color:#7dd3fc;font-size:18px;letter-spacing:4px;cursor:pointer;border-radius:4px;transition:all .3s;font-family:inherit}
+.title-btn:hover{background:linear-gradient(135deg,rgba(56,189,248,.3),rgba(56,189,248,.1));border-color:#38bdf8;color:#fff;box-shadow:0 0 20px rgba(56,189,248,.3);transform:translateY(-2px)}
+.title-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+#game-screen{display:none;height:100vh}
+#game-container{display:flex;height:100vh}
+#sidebar{width:180px;min-width:180px;background:linear-gradient(180deg,#0f172a,#1e293b);border-right:1px solid rgba(56,189,248,.2);display:flex;flex-direction:column;padding:16px 0}
+.sidebar-title{text-align:center;font-size:14px;color:#38bdf8;letter-spacing:4px;padding-bottom:12px;border-bottom:1px solid rgba(56,189,248,.15);margin-bottom:8px}
+.menu-btn{padding:12px 20px;margin:2px 8px;background:transparent;border:none;color:#94a3b8;font-size:15px;letter-spacing:2px;cursor:pointer;text-align:left;border-radius:4px;transition:all .2s;display:flex;align-items:center;gap:10px;font-family:inherit}
+.menu-btn:hover{background:rgba(56,189,248,.1);color:#7dd3fc}
+.menu-btn.active{background:linear-gradient(90deg,rgba(56,189,248,.2),transparent);color:#38bdf8;border-left:3px solid #38bdf8}
+.menu-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(56,189,248,.15);font-size:12px;color:#64748b}
+.sidebar-footer .stone-count{color:#fbbf24;font-size:14px;font-weight:bold}
+.small-btn{width:100%;padding:6px;margin-top:6px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#7dd3fc;font-size:11px;cursor:pointer;border-radius:3px;font-family:inherit}
+.small-btn.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#top-bar{height:48px;min-height:48px;background:linear-gradient(90deg,#0f172a,#1e293b,#0f172a);border-bottom:1px solid rgba(56,189,248,.2);display:flex;align-items:center;padding:0 24px;gap:24px;font-size:13px}
+#top-bar .location{color:#38bdf8;font-weight:bold;letter-spacing:2px}
+#top-bar .chapter{color:#94a3b8}
+#top-bar .team-hp{display:flex;gap:12px;margin-left:auto}
+.hp-mini{display:flex;align-items:center;gap:4px;font-size:11px}
+.hp-mini .name{color:#cbd5e1}
+.hp-mini .bar{width:50px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.hp-mini .bar-fill{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .3s}
+.hp-mini .bar-fill.low{background:linear-gradient(90deg,#ef4444,#f87171)}
+.hp-mini .bar-fill.mid{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+#content-panel{flex:1;overflow-y:auto;padding:24px 32px;scroll-behavior:smooth}
+#content-panel::-webkit-scrollbar{width:6px}
+#content-panel::-webkit-scrollbar-track{background:transparent}
+#content-panel::-webkit-scrollbar-thumb{background:rgba(56,189,248,.3);border-radius:3px}
+.story-node{margin-bottom:16px;animation:fi .5s ease}
+@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.narration{color:#94a3b8;font-size:15px;line-height:1.8;font-style:italic;padding:4px 0}
+.dialogue{margin:8px 0;padding:10px 16px;background:rgba(30,41,59,.6);border-radius:6px;border-left:3px solid #38bdf8}
+.dialogue .speaker{font-weight:bold;font-size:14px;margin-bottom:4px}
+.dialogue .speaker.xie{color:#a78bfa}.dialogue .speaker.gu{color:#34d399}
+.dialogue .speaker.shen{color:#fb923c}.dialogue .speaker.jiang{color:#f472b6}
+.dialogue .speaker.npc{color:#fbbf24}
+.dialogue .text{color:#e2e8f0;font-size:15px;line-height:1.7}
+#choices-area{padding:16px 32px 24px;border-top:1px solid rgba(56,189,248,.15);background:linear-gradient(0deg,rgba(15,23,42,.9),transparent)}
+.choice-btn{display:block;width:100%;text-align:left;padding:12px 20px;margin:6px 0;background:linear-gradient(90deg,rgba(56,189,248,.08),transparent);border:1px solid rgba(56,189,248,.25);color:#cbd5e1;font-size:14px;cursor:pointer;border-radius:6px;transition:all .25s;font-family:inherit}
+.choice-btn:hover{background:linear-gradient(90deg,rgba(56,189,248,.2),rgba(56,189,248,.05));border-color:#38bdf8;color:#fff;transform:translateX(4px);box-shadow:0 0 15px rgba(56,189,248,.15)}
+.choice-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-right:8px;vertical-align:middle}
+.tag-courage{background:rgba(239,68,68,.2);color:#f87171}
+.tag-wisdom{background:rgba(168,85,247,.2);color:#c084fc}
+.tag-kind{background:rgba(52,211,153,.2);color:#34d399}
+.tag-neutral{background:rgba(148,163,184,.2);color:#94a3b8}
+.panel-view{display:none;animation:fi .3s ease}
+.panel-view.active{display:block}
+.panel-header{font-size:24px;color:#38bdf8;letter-spacing:4px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid rgba(56,189,248,.3);display:flex;align-items:center;gap:12px}
+.panel-header::before{content:'';width:4px;height:24px;background:linear-gradient(180deg,#38bdf8,#0284c7);border-radius:2px}
+.character-card{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:16px 20px;margin-bottom:14px;transition:all .3s}
+.character-card:hover{border-color:rgba(56,189,248,.5);box-shadow:0 4px 20px rgba(56,189,248,.1)}
+.char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.char-name{font-size:18px;font-weight:bold}
+.char-name.xie{color:#a78bfa}.char-name.gu{color:#34d399}
+.char-name.shen{color:#fb923c}.char-name.river{color:#f472b6}
+.char-role{font-size:12px;color:#64748b;margin-left:8px}
+.char-level{font-size:13px;color:#fbbf24}
+.realm-bar{display:flex;align-items:center;gap:4px;margin:8px 0;font-size:11px}
+.realm-step{padding:3px 8px;border-radius:3px;background:#1e293b;color:#475569}
+.realm-step.current{background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:bold}
+.realm-step.passed{color:#94a3b8}
+.stat-row{display:flex;gap:16px;margin-top:8px;font-size:13px;align-items:center}
+.stat-item{display:flex;align-items:center;gap:6px}
+.stat-label{color:#64748b}.stat-value{color:#e2e8f0}
+.hp-bar-wrap{flex:1}
+.hp-bar-bg{height:8px;background:#1e293b;border-radius:4px;overflow:hidden;margin-top:4px}
+.hp-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.char-status{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px}
+.status-normal{background:rgba(52,211,153,.2);color:#34d399}
+.status-injured{background:rgba(251,146,60,.2);color:#fb923c}
+.status-weak{background:rgba(239,68,68,.2);color:#f87171}
+.affection-bar{margin-top:6px}
+.affection-label{font-size:11px;color:#f472b6}
+.affection-bg{height:5px;background:#1e293b;border-radius:3px;margin-top:3px;overflow:hidden}
+.affection-fill{height:100%;background:linear-gradient(90deg,#ec4899,#f472b6);border-radius:3px;transition:width .5s}
+.task-section{margin-bottom:20px}
+.task-section-title{font-size:16px;color:#34d399;margin-bottom:10px;padding-left:10px;border-left:3px solid #34d399}
+.task-card{background:rgba(30,41,59,.6);border:1px solid rgba(56,189,248,.15);border-radius:8px;padding:12px 16px;margin-bottom:8px}
+.task-card.done{opacity:.5}
+.task-title-row{display:flex;justify-content:space-between;align-items:center}
+.task-name{font-size:14px;color:#e2e8f0;font-weight:bold}
+.task-status{font-size:11px;padding:2px 10px;border-radius:10px}
+.status-active{background:rgba(56,189,248,.2);color:#38bdf8}
+.status-done{background:rgba(52,211,153,.2);color:#34d399}
+.status-locked{background:rgba(100,116,139,.2);color:#64748b}
+.task-desc{font-size:12px;color:#94a3b8;margin-top:6px;line-height:1.6}
+.task-reward{font-size:12px;color:#fbbf24;margin-top:4px}
+.map-container{background:rgba(15,23,42,.6);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:30px;position:relative;min-height:500px}
+.map-node{display:flex;align-items:center;gap:12px;padding:10px 16px;margin:8px 0;border-radius:8px;transition:all .3s}
+.map-node.current{background:linear-gradient(90deg,rgba(56,189,248,.2),transparent);border:1px solid rgba(56,189,248,.4)}
+.map-node.visited{opacity:.7}.map-node.locked{opacity:.3}
+.map-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.map-dot.current{background:#38bdf8;box-shadow:0 0 12px #38bdf8;animation:pulse 2s infinite}
+.map-dot.visited{background:#ef4444}
+.map-dot.locked{background:#475569;border:2px dashed #64748b}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px #38bdf8}50%{box-shadow:0 0 24px #38bdf8}}
+.map-name{font-size:15px;font-weight:bold}
+.map-name.current{color:#38bdf8}.map-name.visited{color:#f87171}.map-name.locked{color:#64748b}
+.map-info{font-size:12px;color:#94a3b8;margin-left:auto}
+.map-connector{width:2px;height:20px;background:rgba(56,189,248,.3);margin-left:22px}
+.spirit-eye-status{font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px}
+.eye-weak{background:rgba(148,163,184,.2);color:#94a3b8}
+.eye-strong{background:rgba(56,189,248,.2);color:#38bdf8}
+.eye-active{background:rgba(52,211,153,.2);color:#34d399}
+.inventory-section{margin-bottom:20px}
+.inv-section-title{font-size:15px;color:#34d399;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(52,211,153,.2)}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.inv-item{background:rgba(30,41,59,.6);border:1px solid rgba(56,189,248,.15);border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;transition:all .2s}
+.inv-item:hover{border-color:rgba(56,189,248,.4);background:rgba(30,41,59,.9)}
+.inv-item-name{font-size:13px;color:#e2e8f0}
+.inv-item-count{font-size:14px;color:#fbbf24;font-weight:bold}
+.inv-item-desc{font-size:11px;color:#64748b;margin-top:2px}
+.inv-empty{color:#475569;font-size:13px;font-style:italic;padding:10px}
+.stone-display{font-size:20px;color:#fbbf24;font-weight:bold;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.shop-item{background:rgba(30,41,59,.6);border:1px solid rgba(56,189,248,.15);border-radius:8px;padding:14px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.shop-item-info{flex:1}
+.shop-item-name{font-size:15px;color:#e2e8f0;font-weight:bold}
+.shop-item-desc{font-size:12px;color:#94a3b8;margin-top:4px}
+.shop-item-price{font-size:16px;color:#fbbf24;font-weight:bold;margin-right:16px}
+.buy-btn{padding:8px 20px;background:linear-gradient(135deg,#0284c7,#0369a1);border:none;color:#fff;font-size:13px;cursor:pointer;border-radius:4px;transition:all .2s;font-family:inherit}
+.buy-btn:hover{background:linear-gradient(135deg,#0ea5e9,#0284c7);box-shadow:0 0 15px rgba(56,189,248,.3)}
+.buy-btn:disabled{opacity:.3;cursor:not-allowed}
+.back-btn{padding:8px 20px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#7dd3fc;font-size:13px;cursor:pointer;border-radius:4px;margin-bottom:16px;transition:all .2s;font-family:inherit}
+.back-btn:hover{background:rgba(56,189,248,.2);border-color:#38bdf8}
+.tip-section{margin-bottom:16px}
+.tip-section-title{font-size:14px;color:#38bdf8;margin-bottom:8px;padding:6px 12px;background:rgba(56,189,248,.1);border-radius:4px;display:inline-block}
+.tip-item{font-size:13px;color:#cbd5e1;padding:6px 0;padding-left:16px;position:relative;line-height:1.6}
+.tip-item::before{content:'▸';position:absolute;left:0;color:#38bdf8}
+.tip-item.urgent{color:#f87171}.tip-item.urgent::before{color:#ef4444}
+#battle-overlay{position:fixed;inset:0;display:none;background:rgba(10,14,39,.95);z-index:150;flex-direction:column;align-items:center;justify-content:center;padding:40px}
+.battle-title{font-size:32px;color:#ef4444;letter-spacing:8px;margin-bottom:30px;text-shadow:0 0 20px rgba(239,68,68,.5)}
+.battle-area{display:flex;gap:60px;margin-bottom:30px;align-items:flex-start}
+.battle-side{text-align:center}
+.battle-side-title{font-size:16px;color:#94a3b8;margin-bottom:12px;letter-spacing:4px}
+.battle-char{background:rgba(30,41,59,.8);border:1px solid rgba(56,189,248,.3);border-radius:8px;padding:12px 20px;margin-bottom:8px;min-width:180px}
+.battle-char-name{font-size:14px;font-weight:bold;margin-bottom:6px}
+.battle-char-hp{height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.battle-char-hp-fill{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .5s}
+.battle-enemy{background:rgba(127,29,29,.4);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:16px 24px;min-width:200px;margin-bottom:8px}
+.battle-enemy-name{font-size:18px;color:#f87171;font-weight:bold}
+.battle-log{max-width:600px;max-height:150px;overflow-y:auto;background:rgba(15,23,42,.8);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#94a3b8;line-height:1.8;width:100%}
+.battle-log .log-damage{color:#f87171}.battle-log .log-heal{color:#34d399}.battle-log .log-info{color:#38bdf8}
+.battle-actions{display:flex;gap:12px}
+.battle-btn{padding:10px 24px;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid;transition:all .2s;font-family:inherit}
+.battle-btn.attack{background:rgba(239,68,68,.2);border-color:#ef4444;color:#f87171}
+.battle-btn.attack:hover{background:rgba(239,68,68,.4)}
+.battle-btn.skill{background:rgba(168,85,247,.2);border-color:#a855f7;color:#c084fc}
+.battle-btn.skill:hover{background:rgba(168,85,247,.4)}
+.battle-btn.defend{background:rgba(56,189,248,.2);border-color:#38bdf8;color:#7dd3fc}
+.battle-btn.defend:hover{background:rgba(56,189,248,.4)}
+.battle-btn.item{background:rgba(52,211,153,.2);border-color:#34d399;color:#6ee7b7}
+.battle-btn.item:hover{background:rgba(52,211,153,.4)}
+.battle-btn:disabled{opacity:.3;cursor:not-allowed}
+#ending-screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a2744 0%,#0a0e27 70%);z-index:200;padding:40px}
+.ending-title{font-size:48px;margin-bottom:16px;letter-spacing:12px;animation:tg 3s ease-in-out infinite}
+.ending-title.good{background:linear-gradient(180deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ending-title.bad{background:linear-gradient(180deg,#ef4444,#991b1b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ending-title.true{background:linear-gradient(180deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ending-subtitle{font-size:18px;color:#94a3b8;margin-bottom:30px;letter-spacing:4px}
+.ending-text{max-width:700px;font-size:15px;line-height:2;color:#cbd5e1;text-align:center;margin-bottom:40px}
+.ending-stats{display:flex;gap:30px;margin-bottom:40px;flex-wrap:wrap;justify-content:center}
+.ending-stat{text-align:center;padding:12px 24px;background:rgba(30,41,59,.6);border-radius:8px;border:1px solid rgba(56,189,248,.2)}
+.ending-stat-label{font-size:12px;color:#64748b}
+.ending-stat-value{font-size:20px;color:#38bdf8;font-weight:bold;margin-top:4px}
+#notification{position:fixed;top:60px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.notif-item{padding:12px 20px;border-radius:6px;font-size:13px;animation:si .3s ease,fo .3s ease 2.7s forwards;max-width:300px;color:#fff}
+@keyframes si{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fo{to{opacity:0;transform:translateX(20px)}}
+.notif-item.info{background:rgba(56,189,248,.9)}
+.notif-item.success{background:rgba(52,211,153,.9)}
+.notif-item.warning{background:rgba(251,146,60,.9)}
+.notif-item.danger{background:rgba(239,68,68,.9)}
+@media(max-width:900px){#sidebar{width:60px;min-width:60px}.menu-btn span{display:none}.sidebar-title{font-size:0}.sidebar-title::after{content:'菜单';font-size:12px}#title-screen h1{font-size:42px;letter-spacing:8px}}
+</style>
+</head>
+<body>
+<div id="title-screen">
+<h1>灵脉复苏</h1>
+<div class="subtitle">— 修仙界的最后希望 —</div>
+<button class="title-btn" onclick="startNewGame()">开始游戏</button>
+<button class="title-btn" id="continue-btn" onclick="continueGame()">继续游戏</button>
+<button class="title-btn" onclick="showAbout()">关于游戏</button>
+</div>
+<div id="game-screen">
+<div id="game-container">
+<div id="sidebar">
+<div class="sidebar-title">功 能 菜 单</div>
+<button class="menu-btn active" data-panel="story" onclick="switchPanel('story')"><span class="menu-icon">📖</span><span>剧情</span></button>
+<button class="menu-btn" data-panel="team" onclick="switchPanel('team')"><span class="menu-icon">🏛️</span><span>师门</span></button>
+<button class="menu-btn" data-panel="quest" onclick="switchPanel('quest')"><span class="menu-icon">📋</span><span>任务</span></button>
+<button class="menu-btn" data-panel="map" onclick="switchPanel('map')"><span class="menu-icon">🗺️</span><span>地图</span></button>
+<button class="menu-btn" data-panel="bag" onclick="switchPanel('bag')"><span class="menu-icon">🎒</span><span>背包</span></button>
+<button class="menu-btn" data-panel="shop" onclick="switchPanel('shop')"><span class="menu-icon">🛒</span><span>商城</span></button>
+<button class="menu-btn" data-panel="hint" onclick="switchPanel('hint')"><span class="menu-icon">💡</span><span>提示</span></button>
+<div class="sidebar-footer">
+<div>灵石：<span class="stone-count" id="sidebar-stones">0</span></div>
+<button class="small-btn" onclick="saveGame()">保存进度</button>
+<button class="small-btn danger" onclick="confirmRestart()">重新开始</button>
+</div>
+</div>
+<div id="main-area">
+<div id="top-bar">
+<span class="location" id="current-location">凌霄宗</span>
+<span class="chapter" id="current-chapter">序章 · 启程</span>
+<div class="team-hp" id="team-hp-display"></div>
+</div>
+<div id="content-panel">
+<div class="panel-view active" id="panel-story"><div id="story-content"></div></div>
+<div class="panel-view" id="panel-team"><div class="panel-header">师门面板</div><div id="team-content"></div></div>
+<div class="panel-view" id="panel-quest"><div class="panel-header">任务面板</div><div id="quest-content"></div></div>
+<div class="panel-view" id="panel-map"><div class="panel-header">地图面板</div><div id="map-content"></div></div>
+<div class="panel-view" id="panel-bag"><div class="panel-header">背包面板</div><div id="bag-content"></div></div>
+<div class="panel-view" id="panel-shop"><div class="panel-header">商城面板</div><div id="shop-content"></div></div>
+<div class="panel-view" id="panel-hint"><div class="panel-header">提示面板</div><div id="hint-content"></div></div>
+</div>
+<div id="choices-area"><div id="choices-content"></div></div>
+</div>
+</div>
+</div>
+<div id="battle-overlay">
+<div class="battle-title" id="battle-title">战 斗</div>
+<div class="battle-area">
+<div class="battle-side"><div class="battle-side-title">我 方</div><div id="battle-allies"></div></div>
+<div class="battle-side"><div class="battle-side-title">敌 方</div><div id="battle-enemies"></div></div>
+</div>
+<div class="battle-log" id="battle-log"></div>
+<div class="battle-actions" id="battle-actions"></div>
+</div>
+<div id="ending-screen">
+<div class="ending-title" id="ending-title">结局</div>
+<div class="ending-subtitle" id="ending-subtitle"></div>
+<div class="ending-text" id="ending-text"></div>
+<div class="ending-stats" id="ending-stats"></div>
+<div style="display:flex;gap:16px;">
+<button class="title-btn" onclick="startNewGame()">重新开始</button>
+<button class="title-btn" onclick="backToTitle()">返回标题</button>
+</div>
+</div>
+<div id="notification"></div>
+<script>
+const REALMS=['炼气','筑基','金丹','元婴','化神'];
+const CHARACTERS={
+jiang:{name:'江心月',role:'凌霄宗大师姐',realm:'金丹',level:45,hp:50,maxHp:50,weapon:'承影剑',weaponLv:45,status:'normal',affection:0,isPlayer:true},
+xie:{name:'谢清晏',role:'大师兄',realm:'筑基',level:35,hp:50,maxHp:50,weapon:'玄铁尺',weaponLv:35,status:'normal',affection:0},
+gu:{name:'顾昭白',role:'二师兄',realm:'筑基',level:33,hp:50,maxHp:50,weapon:'清风扇',weaponLv:33,status:'normal',affection:0},
+shen:{name:'沈夜',role:'小师弟',realm:'炼气',level:18,hp:50,maxHp:50,weapon:'墨玉短刃',weaponLv:18,status:'normal',affection:0}
+};
+const ITEMS={
+huiLing:{name:'回灵丹',desc:'恢复20点体力',type:'pill',price:30},
+xuGu:{name:'续骨膏',desc:'治疗重伤，恢复10点体力',type:'pill',price:80},
+qingXin:{name:'清心丸',desc:'恢复15点体力，解除失控',type:'pill',price:100},
+wenLingCao:{name:'温灵草',desc:'炼丹材料',type:'material',price:15},
+xuanTieKuang:{name:'玄铁矿',desc:'强化法器材料',type:'material',price:25},
+fuZhi:{name:'符纸',desc:'制作符箓材料',type:'material',price:10},
+xuanTieFrag:{name:'玄铁碎片',desc:'集齐5个强化玄铁尺',type:'fragment',price:50},
+shuangWenFrag:{name:'霜纹碎片',desc:'集齐5个合成霜纹剑',type:'fragment',price:60},
+yanJingFrag:{name:'炎晶碎片',desc:'集齐5个合成炎晶刃',type:'fragment',price:60},
+guJingFrag:{name:'古镜碎片',desc:'与灵脉真相有关',type:'special',price:0},
+shiZunNote:{name:'师尊手札残页',desc:'师尊留下的秘辛',type:'special',price:0}
+};
+const SHOP_ITEMS=['huiLing','xuGu','qingXin','wenLingCao','xuanTieKuang','fuZhi','xuanTieFrag'];
+let gameState=null;
+function initState(){return{
+currentNode:'start',characters:JSON.parse(JSON.stringify(CHARACTERS)),
+inventory:{huiLing:3,wenLingCao:2,fuZhi:3},stones:100,
+location:'凌霄宗',chapter:'序章 · 启程',flags:{},
+quests:{main:[
+{id:'q1',name:'寻找第一处灵眼',desc:'前往南方青木峡，寻找并激活第一处灵眼',reward:'全员经验+5，灵石+50',status:'active'},
+{id:'q2',name:'迷雾林的秘密',desc:'前往迷雾林，激活第二处灵眼，调查真相',reward:'全员经验+5，灵石+80',status:'locked'},
+{id:'q3',name:'烬火城的烈火',desc:'前往烬火城，击败烈火堂，激活第三处灵眼',reward:'全员经验+5，灵石+120',status:'locked'}
+],side:[],daily:null},
+map:[
+{id:'zongmen',name:'凌霄宗',status:'visited',eye:'none',progress:100},
+{id:'qingmu',name:'青木峡',status:'locked',eye:'weak',progress:0},
+{id:'miwu',name:'迷雾林',status:'locked',eye:'weak',progress:0},
+{id:'jinhuo',name:'烬火城',status:'locked',eye:'weak',progress:0},
+{id:'shuanghan',name:'霜寒渊',status:'locked',eye:'weak',progress:0},
+{id:'lingyuan',name:'灵脉之源',status:'locked',eye:'strong',progress:0}
+],battle:null,playTime:0,choicesMade:0}}
+function addItem(id,c){gameState.inventory[id]=(gameState.inventory[id]||0)+c;notify('获得 '+ITEMS[id].name+' ×'+c,'success')}
+function removeItem(id,c){if(gameState.inventory[id]>=c){gameState.inventory[id]-=c;if(gameState.inventory[id]<=0)delete gameState.inventory[id];return true}return false}
+function changeAffection(c,d){gameState.characters[c].affection+=d;if(d>0)notify(gameState.characters[c].name+' 好感+'+d,'info')}
+function getTotalAffection(){return gameState.characters.xie.affection+gameState.characters.gu.affection+gameState.characters.shen.affection}
+function damageChar(c,d){gameState.characters[c].hp=Math.max(0,gameState.characters[c].hp-d);if(gameState.characters[c].hp<=0)gameState.characters[c].status='weak';else if(gameState.characters[c].hp<15)gameState.characters[c].status='injured'}
+function damageAll(d){for(let c in gameState.characters)damageChar(c,d)}
+function healAll(a){for(let c in gameState.characters){gameState.characters[c].hp=Math.min(gameState.characters[c].maxHp,gameState.characters[c].hp+a);if(gameState.characters[c].hp>15)gameState.characters[c].status='normal'}}
+function gainExp(l){for(let c in gameState.characters){let ch=gameState.characters[c];ch.level+=l;if(ch.level>100)ch.level=100;if(ch.level>=81)ch.realm='化神';else if(ch.level>=61)ch.realm='元婴';else if(ch.level>=41)ch.realm='金丹';else if(ch.level>=21)ch.realm='筑基';else ch.realm='炼气'}notify('全员等级+'+l+'！','success')}
+function unlockMap(id){let n=gameState.map.find(m=>m.id===id);if(n)n.status='current'}
+function updateMapEye(id,s){let n=gameState.map.find(m=>m.id===id);if(n)n.eye=s}
+function completeQuest(id){for(let q of gameState.quests.main){if(q.id===id)q.status='done'}let idx=gameState.quests.main.findIndex(q=>q.id===id);if(idx>=0&&idx+1<gameState.quests.main.length)gameState.quests.main[idx+1].status='active';notify('任务完成！','success')}
+function notify(msg,type){type=type||'info';let c=document.getElementById('notification');let i=document.createElement('div');i.className='notif-item '+type;i.textContent=msg;c.appendChild(i);setTimeout(()=>i.remove(),3000)}
+const STORY={
+start:{text:[
+{type:'narration',content:'你好，江心月。你是凌霄宗的大师姐。'},
+{type:'narration',content:'师尊闭关前，将宗门信物"寻灵盘"交到你手中。'},
+{type:'narration',content:'修仙界的灵脉正在枯萎，而寻灵盘在你掌心微微发烫——第一处灵眼，就在南方青木峡的方向。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，一切都已准备妥当。何时出发？'},
+{type:'dialogue',speaker:'gu',content:'哎呀呀，大师姐你可要想清楚，这一路山高水远，说不定有去无回哦~'},
+{type:'dialogue',speaker:'shen',content:'师姐……我、我会保护你的。'},
+{type:'narration',content:'三位师弟站在山门前，等待你的决定。'}],
+choices:[
+{text:'「即刻出发，不必多言。」',tag:'courage',next:'depart_fast'},
+{text:'「先检查物资，确保万无一失。」',tag:'wisdom',next:'depart_check'},
+{text:'「沈夜，你身体还好吗？要不要留下？」',tag:'kind',next:'depart_shen'},
+{text:'「在出发前，我想再去师尊闭关处看看。」',tag:'neutral',next:'depart_master'}
+]},
+depart_fast:{text:[
+{type:'narration',content:'你一声令下，四人即刻启程。谢清晏眼中闪过一丝赞许。'},
+{type:'dialogue',speaker:'xie',content:'是。我来开路。'},
+{type:'narration',content:'行至半日，前方出现一片密林。寻灵盘的指针微微颤动。'}],
+choices:[
+{text:'进入密林探查',tag:'courage',next:'forest_enter'},
+{text:'绕路而行，保存体力',tag:'wisdom',next:'forest_bypass'}
+]},
+depart_check:{text:[
+{type:'narration',content:'你仔细清点了丹药、干粮和法器。顾昭白在一旁笑嘻嘻地看着你。'},
+{type:'dialogue',speaker:'gu',content:'大师姐果然细心，不像某些人只会蛮干。'},
+{type:'dialogue',speaker:'xie',content:'……'},
+{type:'narration',content:'你在行囊中多备了两颗回灵丹。（获得回灵丹×2）'}],
+onEnter:function(){addItem('huiLing',2)},
+choices:[{text:'准备完毕，出发',tag:'neutral',next:'on_road'}]},
+depart_shen:{text:[
+{type:'narration',content:'你转向沈夜，语气放柔。沈夜的脸微微泛红，用力摇头。'},
+{type:'dialogue',speaker:'shen',content:'我没事！师姐在哪里，我就在哪里！'},
+{type:'dialogue',speaker:'gu',content:'哎哟，小师弟真是黏大师姐呢~'},
+{type:'dialogue',speaker:'shen',content:'二师兄你、你别说了……'},
+{type:'narration',content:'沈夜的眼中满是信赖。你心中一暖。'}],
+onEnter:function(){changeAffection('shen',2)},
+choices:[{text:'「好，那我们一起出发。」',tag:'kind',next:'on_road'}]},
+depart_master:{text:[
+{type:'narration',content:'你独自来到师尊闭关的洞府前。石门紧闭，灵气缭绕。'},
+{type:'narration',content:'你在门前站了片刻，正欲离开，却发现门缝中夹着一张泛黄的纸页。'},
+{type:'narration',content:'是师尊的手札残页。上面写着：「灵脉之衰，非天灾，乃人祸。切记，不可轻信……」字迹到此中断。'}],
+onEnter:function(){addItem('shiZunNote',1);gameState.flags.foundNote=true},
+choices:[{text:'将手札收好，出发',tag:'wisdom',next:'on_road'}]},
+on_road:{text:[
+{type:'narration',content:'四人一路向南。沿途村落萧条，田地荒芜。灵脉枯萎的影响，比想象中更严重。'},
+{type:'dialogue',speaker:'gu',content:'这才走了多远，就已经这样了……再往南，怕是更惨。'},
+{type:'dialogue',speaker:'xie',content:'加快脚程。天黑前赶到青木峡。'},
+{type:'narration',content:'正行间，前方传来呼救声。'}],
+choices:[
+{text:'前去查看',tag:'kind',next:'road_rescue'},
+{text:'可能是陷阱，谨慎绕行',tag:'wisdom',next:'road_bypass'},
+{text:'让顾昭白先去探路',tag:'wisdom',next:'road_scout'}
+]},
+forest_enter:{text:[
+{type:'narration',content:'你决定进入密林。林中雾气渐浓，灵气却异常充沛。'},
+{type:'dialogue',speaker:'xie',content:'不对劲。这里的灵气浓度，远超寻常。'},
+{type:'narration',content:'突然，三头妖兽从树丛中扑出！'},
+{type:'dialogue',speaker:'shen',content:'师姐小心！'}],
+onEnter:function(){startBattle('forest_beasts')},choices:[]},
+forest_bypass:{text:[
+{type:'narration',content:'你选择绕路。虽然多走了些路程，但队伍保存了体力。'},
+{type:'dialogue',speaker:'gu',content:'大师姐明智。这种地方，最容易被人设伏。'},
+{type:'narration',content:'傍晚时分，你们终于抵达青木峡外围。'}],
+choices:[{text:'进入青木峡',tag:'neutral',next:'qingmu_enter'}]},
+road_rescue:{text:[
+{type:'narration',content:'你循声跑去，只见一个老农被两名劫匪围住。'},
+{type:'dialogue',speaker:'gu',content:'光天化日之下抢劫？真是世风日下。'},
+{type:'narration',content:'劫匪看到你们，非但不逃，反而狞笑一声，亮出了法器。'},
+{type:'dialogue',speaker:'xie',content:'是修士。小心。'}],
+onEnter:function(){startBattle('road_bandits')},choices:[]},
+road_bypass:{text:[
+{type:'narration',content:'你选择绕行。顾昭白回头看了一眼，欲言又止。'},
+{type:'dialogue',speaker:'gu',content:'……大师姐，那呼救声，听着不像是假的。'},
+{type:'dialogue',speaker:'xie',content:'大师姐的决定有她的道理。'},
+{type:'narration',content:'你心中微有不安，但最终还是加快了脚步。'}],
+onEnter:function(){changeAffection('gu',-1)},
+choices:[{text:'继续赶路',tag:'neutral',next:'qingmu_enter'}]},
+road_scout:{text:[
+{type:'narration',content:'顾昭白领命前去，不多时便折返，神色凝重。'},
+{type:'dialogue',speaker:'gu',content:'是两个劫匪，都是炼气期。不过……他们身上有魔气。'},
+{type:'dialogue',speaker:'xie',content:'魔气？'},
+{type:'dialogue',speaker:'gu',content:'嗯。和小师弟身上的……有点像，但又不完全一样。'},
+{type:'narration',content:'沈夜的身体微微一颤。你看向他，他勉强笑了笑。'}],
+choices:[
+{text:'去解决那两个劫匪',tag:'courage',next:'road_bandits_fight'},
+{text:'魔气事关重大，先记下，继续赶路',tag:'wisdom',next:'qingmu_enter'}
+]},
+road_bandits_fight:{text:[
+{type:'narration',content:'你们悄然逼近劫匪。谢清晏一马当先，玄铁尺横扫而出！'}],
+onEnter:function(){startBattle('road_bandits')},choices:[]},
+battle_win_forest:{text:[
+{type:'narration',content:'妖兽被击退。你在它们的巢穴中发现了一些材料。'},
+{type:'narration',content:'（获得玄铁矿×2，温灵草×1）'}],
+onEnter:function(){addItem('xuanTieKuang',2);addItem('wenLingCao',1);gainExp(1)},
+choices:[{text:'继续前行',tag:'neutral',next:'qingmu_enter'}]},
+battle_win_bandits:{text:[
+{type:'narration',content:'劫匪被制服。老农千恩万谢，塞给你一个布包。'},
+{type:'dialogue',speaker:'npc',content:'恩人啊！这是小老儿祖传的丹药，还请收下！'},
+{type:'narration',content:'（获得回灵丹×3，灵石+30）'},
+{type:'dialogue',speaker:'gu',content:'大师姐，你看他们身上的魔气……果然和小师弟的不一样。这个更像是……后天注入的。'}],
+onEnter:function(){addItem('huiLing',3);gameState.stones+=30;gainExp(1);gameState.flags.demonQi=true},
+choices:[{text:'「先记下此事，继续赶路。」',tag:'neutral',next:'qingmu_enter'}]},
+qingmu_enter:{text:[
+{type:'narration',content:'青木峡到了。峡谷两侧古木参天，灵气比外界浓郁数倍。'},
+{type:'narration',content:'寻灵盘剧烈震动，指针直指峡谷深处。'},
+{type:'dialogue',speaker:'xie',content:'灵眼就在前方。但这里……似乎还有其他人。'},
+{type:'narration',content:'你凝神感知，果然察觉到数道修士的气息。'}],
+onEnter:function(){gameState.location='青木峡';gameState.chapter='第一章 · 青木峡';unlockMap('qingmu');updateMapEye('qingmu','strong')},
+choices:[
+{text:'正面进入，表明身份',tag:'courage',next:'qingmu_front'},
+{text:'让顾昭白潜入探查',tag:'wisdom',next:'qingmu_scout'},
+{text:'先在峡谷外休息，恢复体力',tag:'kind',next:'qingmu_rest'}
+]},
+qingmu_front:{text:[
+{type:'narration',content:'你率队正大光明地走入峡谷。前方空地上，几名身着灰袍的修士正在布阵。'},
+{type:'dialogue',speaker:'npc',content:'什么人？！此地已被我们玄冥教征用，闲杂人等滚开！'},
+{type:'dialogue',speaker:'gu',content:'玄冥教？那个邪修门派？他们怎么会在这里？'},
+{type:'dialogue',speaker:'xie',content:'他们在抽取灵眼的灵气。不能让他们继续。'}],
+choices:[
+{text:'「住手！你们在做什么！」',tag:'courage',next:'qingmu_fight'},
+{text:'「我们是凌霄宗弟子，此事不能不管。」',tag:'neutral',next:'qingmu_negotiate'},
+{text:'暗中观察，等他们阵法完成的瞬间突袭',tag:'wisdom',next:'qingmu_ambush'}
+]},
+qingmu_scout:{text:[
+{type:'narration',content:'顾昭白悄无声息地潜入。半个时辰后，他带回了重要情报。'},
+{type:'dialogue',speaker:'gu',content:'是玄冥教的人，大概七八个。为首的筑基后期。他们在搞一个抽灵阵，想把灵眼的灵气一次性抽干。'},
+{type:'dialogue',speaker:'gu',content:'不过……阵法还没完成，现在是最好的时机。'},
+{type:'dialogue',speaker:'shen',content:'师姐，我、我可以从后面偷袭他们……'}],
+choices:[
+{text:'按顾昭白说的，趁阵法未完成突袭',tag:'wisdom',next:'qingmu_ambush'},
+{text:'让沈夜从后方策应，正面强攻',tag:'courage',next:'qingmu_fight'}
+]},
+qingmu_rest:{text:[
+{type:'narration',content:'你决定先在峡谷外休整。众人围坐篝火旁，气氛难得轻松。'},
+{type:'dialogue',speaker:'gu',content:'说起来，大师姐你还记得吗？小时候你第一次练剑，把师尊的花盆劈了。'},
+{type:'dialogue',speaker:'xie',content:'……师尊罚她扫了一个月的落叶。'},
+{type:'dialogue',speaker:'jiang',content:'你们两个，够了啊。'},
+{type:'dialogue',speaker:'shen',content:'师姐……你以前好厉害。'},
+{type:'narration',content:'众人笑作一团。连日来的疲惫消散了不少。（全员体力+10）'}],
+onEnter:function(){healAll(10);changeAffection('xie',1);changeAffection('gu',1);changeAffection('shen',1)},
+choices:[{text:'休息完毕，进入峡谷',tag:'neutral',next:'qingmu_enter2'}]},
+qingmu_enter2:{text:[
+{type:'narration',content:'休整后，你们进入青木峡。寻灵盘直指深处，那里隐约传来阵法运转的嗡鸣。'}],
+choices:[{text:'继续深入',tag:'neutral',next:'qingmu_front'}]},
+qingmu_fight:{text:[
+{type:'narration',content:'你拔剑出鞘，承影剑发出清越的龙吟！'},
+{type:'dialogue',speaker:'npc',content:'找死！给我上！'}],
+onEnter:function(){startBattle('qingmu_xuanming')},choices:[]},
+qingmu_negotiate:{text:[
+{type:'narration',content:'你报出凌霄宗的名号。玄冥教为首者冷笑一声。'},
+{type:'dialogue',speaker:'npc',content:'凌霄宗？那个快完蛋的门派？你们师尊都闭关躲起来了，还敢来管闲事？'},
+{type:'dialogue',speaker:'xie',content:'……放肆。'},
+{type:'dialogue',speaker:'npc',content:'怎么，想动手？我劝你们识相点，留下寻灵盘，滚！'}],
+choices:[
+{text:'「痴心妄想。动手！」',tag:'courage',next:'qingmu_fight'},
+{text:'「寻灵盘可以给你，但你要先停止抽灵。」（缓兵之计）',tag:'wisdom',next:'qingmu_delay'}
+]},
+qingmu_delay:{text:[
+{type:'narration',content:'你假意妥协，暗中示意谢清晏准备破阵。'},
+{type:'dialogue',speaker:'npc',content:'哦？算你识相。把寻灵盘扔过来！'},
+{type:'narration',content:'就在对方分神的瞬间，谢清晏的玄铁尺破空而出，精准击中阵眼！'},
+{type:'dialogue',speaker:'xie',content:'阵破了！'},
+{type:'dialogue',speaker:'npc',content:'你——！给我杀了他们！'}],
+onEnter:function(){gameState.flags.ambushBonus=true},
+choices:[{text:'乘胜追击！',tag:'courage',next:'qingmu_fight'}]},
+qingmu_ambush:{text:[
+{type:'narration',content:'你们悄然逼近，在阵法即将完成的瞬间发动突袭！'},
+{type:'dialogue',speaker:'gu',content:'就是现在！'},
+{type:'narration',content:'玄冥教众人猝不及防，阵法师被顾昭白一掌拍飞。'}],
+onEnter:function(){gameState.flags.ambushBonus=true},
+choices:[{text:'彻底消灭他们！',tag:'courage',next:'qingmu_fight'}]},
+battle_win_qingmu:{text:[
+{type:'narration',content:'玄冥教众人溃败逃窜。抽灵阵被彻底摧毁。'},
+{type:'narration',content:'灵眼核心暴露在你们面前——那是一颗悬浮在空中的青色光球，散发着温润的光芒。'},
+{type:'dialogue',speaker:'xie',content:'这就是灵眼……比我想象的更纯粹。'},
+{type:'dialogue',speaker:'shen',content:'好温暖……'},
+{type:'narration',content:'寻灵盘飞到空中，与灵眼产生共鸣。你知道，是时候激活它了。'}],
+onEnter:function(){gainExp(5);gameState.stones+=50;updateMapEye('qingmu','active');gameState.flags.qingmuCleared=true;completeQuest('q1');addItem('xuanTieFrag',2)},
+choices:[
+{text:'以自身灵力引导，激活灵眼',tag:'courage',next:'qingmu_activate'},
+{text:'让众人合力，以阵法激活',tag:'wisdom',next:'qingmu_activate_team'},
+{text:'先检查灵眼周围是否有异常',tag:'wisdom',next:'qingmu_check'}
+]},
+qingmu_activate:{text:[
+{type:'narration',content:'你将掌心贴在灵眼上，金丹灵力汹涌而入。'},
+{type:'narration',content:'灵眼剧烈震颤，随即爆发出耀眼的青光！一道灵气光柱冲天而起，向四面八方扩散。'},
+{type:'dialogue',speaker:'gu',content:'成、成功了！你们感觉到了吗？灵气在恢复！'},
+{type:'narration',content:'你感到一阵眩晕，但心中充满喜悦。第一处灵眼，激活成功。'},
+{type:'narration',content:'（江心月体力-15，获得古镜碎片×1）'}],
+onEnter:function(){damageChar('jiang',15);addItem('guJingFrag',1);gameState.flags.activateStyle='solo'},
+choices:[{text:'继续寻找下一处灵眼',tag:'neutral',next:'chapter2_start'}]},
+qingmu_activate_team:{text:[
+{type:'narration',content:'在谢清晏的指挥下，四人各占方位，以灵力共振之法激活灵眼。'},
+{type:'narration',content:'青光冲天而起，灵气如潮水般扩散。四人配合默契，一气呵成。'},
+{type:'dialogue',speaker:'xie',content:'成功了。大师姐，你的指挥很到位。'},
+{type:'dialogue',speaker:'gu',content:'哎呀，大师兄你这是夸人还是夸自己呢~'},
+{type:'narration',content:'（全员体力-8，获得古镜碎片×1）'}],
+onEnter:function(){damageAll(8);addItem('guJingFrag',1);changeAffection('xie',1);gameState.flags.activateStyle='team'},
+choices:[{text:'继续寻找下一处灵眼',tag:'neutral',next:'chapter2_start'}]},
+qingmu_check:{text:[
+{type:'narration',content:'你谨慎地检查灵眼周围。在灵眼下方的石台上，你发现了一个隐秘的凹槽。'},
+{type:'narration',content:'凹槽中放着一枚古朴的玉佩，上面刻着陌生的符文。'},
+{type:'dialogue',speaker:'gu',content:'这是……上古符文？我在古籍里见过类似的，这好像是……封印用的。'},
+{type:'dialogue',speaker:'xie',content:'封印？灵眼上有封印？谁做的？'},
+{type:'narration',content:'你隐约觉得，灵脉枯萎的真相，或许比想象中更复杂。'}],
+onEnter:function(){gameState.flags.foundSeal=true;addItem('guJingFrag',1)},
+choices:[
+{text:'带上玉佩，激活灵眼',tag:'wisdom',next:'qingmu_activate_team'},
+{text:'先研究玉佩再激活',tag:'wisdom',next:'qingmu_research'}
+]},
+qingmu_research:{text:[
+{type:'narration',content:'你仔细研究玉佩上的符文。顾昭白也凑过来，两人讨论了许久。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，我大概看懂了。这个封印……是用来压制灵眼的力量的。换句话说，有人故意让灵脉枯萎！'},
+{type:'dialogue',speaker:'xie',content:'什么人会做这种事？'},
+{type:'dialogue',speaker:'gu',content:'不知道。但符文的风格……很古老，至少是千年前的。'},
+{type:'narration',content:'你将这个发现牢牢记在心中。真相的面纱，似乎揭开了一角。'}],
+onEnter:function(){changeAffection('gu',2);gameState.flags.knowSeal=true},
+choices:[{text:'激活灵眼，继续调查',tag:'neutral',next:'qingmu_activate_team'}]},
+chapter2_start:{text:[
+{type:'narration',content:'青木峡的灵眼激活后，寻灵盘指向了东南方向的迷雾林。'},
+{type:'narration',content:'据说迷雾林终年被诡异的雾气笼罩，进去的人很少能出来。'},
+{type:'dialogue',speaker:'shen',content:'师姐……我、我有点不舒服。'},
+{type:'narration',content:'你看向沈夜，发现他的脸色有些苍白，手臂上隐约有黑色纹路浮现。'},
+{type:'dialogue',speaker:'xie',content:'是魔纹。快到迷雾林了，这里的阴气可能会刺激到他。'}],
+onEnter:function(){gameState.location='迷雾林外';gameState.chapter='第二章 · 迷雾林';unlockMap('miwu')},
+choices:[
+{text:'「沈夜，你留在这里休息，我们进去。」',tag:'kind',next:'shen_stay'},
+{text:'「用清心丸压制一下，我们一起进去。」',tag:'wisdom',next:'shen_pill'},
+{text:'「我们先在外面等一天，看看情况。」',tag:'kind',next:'shen_wait'}
+]},
+shen_stay:{text:[
+{type:'narration',content:'你让沈夜在林外的营地休息，自己带谢清晏和顾昭白进入迷雾林。'},
+{type:'dialogue',speaker:'shen',content:'师姐……你一定要小心。'},
+{type:'dialogue',speaker:'jiang',content:'放心，我们很快回来。'},
+{type:'narration',content:'沈夜依依不舍地看着你们的背影消失在雾气中。'}],
+onEnter:function(){changeAffection('shen',1);gameState.flags.shenOutside=true},
+choices:[{text:'进入迷雾林',tag:'neutral',next:'miwu_enter'}]},
+shen_pill:{text:[
+{type:'narration',content:'你取出一颗清心丸给沈夜服下。黑色纹路渐渐消退，他的脸色好了一些。'},
+{type:'dialogue',speaker:'shen',content:'谢谢师姐……我没事了，我们一起进去吧。'},
+{type:'dialogue',speaker:'gu',content:'小师弟真是一刻都不想离开大师姐呢~'},
+{type:'narration',content:'（消耗清心丸×1）'}],
+onEnter:function(){removeItem('qingXin',1)},
+choices:[{text:'进入迷雾林',tag:'neutral',next:'miwu_enter'}]},
+shen_wait:{text:[
+{type:'narration',content:'你决定在林外休整一天。沈夜的状态逐渐稳定下来。'},
+{type:'narration',content:'当晚，你坐在篝火旁，沈夜悄悄靠过来。'},
+{type:'dialogue',speaker:'shen',content:'师姐……你会不会有一天，也怕我？'},
+{type:'dialogue',speaker:'jiang',content:'傻瓜，我为什么要怕你？'},
+{type:'dialogue',speaker:'shen',content:'因为……我失控的时候，会变成怪物。'},
+{type:'narration',content:'你看着他眼中的恐惧，心中一疼。'}],
+choices:[
+{text:'「你不是怪物。你是沈夜，是我的小师弟。」',tag:'kind',next:'shen_comfort'},
+{text:'「那你就更要好好控制自己，不要让我担心。」',tag:'wisdom',next:'shen_strict'}
+]},
+shen_comfort:{text:[
+{type:'narration',content:'你轻轻摸了摸沈夜的头。他的眼眶红了，用力点头。'},
+{type:'dialogue',speaker:'shen',content:'嗯！我、我一定会控制住的！为了师姐！'},
+{type:'narration',content:'篝火映照下，少年的眼神格外坚定。（体力+15）'}],
+onEnter:function(){changeAffection('shen',3);gameState.flags.shenTrust=true;healAll(15)},
+choices:[{text:'第二天，进入迷雾林',tag:'neutral',next:'miwu_enter'}]},
+shen_strict:{text:[
+{type:'narration',content:'你语气严肃地告诫他。沈夜愣了一下，随即低下头。'},
+{type:'dialogue',speaker:'shen',content:'……我知道了，师姐。我会努力的。'},
+{type:'narration',content:'他没有再说什么，但你能感觉到，他和你之间似乎多了一层隔阂。（体力+10）'}],
+onEnter:function(){changeAffection('shen',1);healAll(10)},
+choices:[{text:'第二天，进入迷雾林',tag:'neutral',next:'miwu_enter'}]},
+miwu_enter:{text:[
+{type:'narration',content:'迷雾林内，雾气浓得几乎伸手不见五指。灵气中夹杂着一股阴冷的气息。'},
+{type:'dialogue',speaker:'xie',content:'大家不要走散。这里的雾气有迷惑心神的作用。'},
+{type:'narration',content:'走了约半个时辰，前方突然出现了分岔路口。'},
+{type:'dialogue',speaker:'gu',content:'左边雾气淡一些，但感觉有杀气。右边雾气浓，但气息比较平和。怎么走？'}],
+choices:[
+{text:'走左边，速战速决',tag:'courage',next:'miwu_left'},
+{text:'走右边，稳妥为上',tag:'wisdom',next:'miwu_right'},
+{text:'让谢清晏布阵，我们原地等雾气散',tag:'wisdom',next:'miwu_wait'}
+]},
+miwu_left:{text:[
+{type:'narration',content:'你选择走左边。果然，没走多远，一群雾妖便从四面八方涌来！'},
+{type:'dialogue',speaker:'xie',content:'结阵！'}],
+onEnter:function(){startBattle('miwu_wraiths')},choices:[]},
+miwu_right:{text:[
+{type:'narration',content:'你选择走右边。雾气越来越浓，周围安静得可怕。'},
+{type:'narration',content:'突然，你听到一阵轻柔的歌声。那歌声婉转动听，却带着一股诡异的力量。'},
+{type:'dialogue',speaker:'gu',content:'不好！是魅妖的歌声，会迷惑心智！'},
+{type:'narration',content:'你感到意识开始模糊……'}],
+choices:[
+{text:'咬破舌尖，以痛觉保持清醒',tag:'courage',next:'miwu_resist'},
+{text:'运转金丹灵力，护住心脉',tag:'wisdom',next:'miwu_shield'},
+{text:'「大家捂住耳朵！」',tag:'kind',next:'miwu_warn'}
+]},
+miwu_wait:{text:[
+{type:'narration',content:'谢清晏迅速布下一个简易的清心阵。众人在阵中休息，等待雾气散去。'},
+{type:'dialogue',speaker:'xie',content:'这个阵法只能维持两个时辰。雾气如果不散，我们还是要硬闯。'},
+{type:'narration',content:'一个时辰后，雾气果然淡了一些。你们趁机继续前行。'},
+{type:'narration',content:'（体力+5）'}],
+onEnter:function(){changeAffection('xie',1);healAll(5)},
+choices:[{text:'继续前行',tag:'neutral',next:'miwu_deep'}]},
+miwu_resist:{text:[
+{type:'narration',content:'你狠下心咬破舌尖，剧痛让你瞬间清醒。你拔剑斩断了歌声的来源——一只隐藏在雾中的魅妖。'},
+{type:'dialogue',speaker:'gu',content:'大师姐好狠的心……不过确实有效。'},
+{type:'narration',content:'（江心月体力-5）'}],
+onEnter:function(){damageChar('jiang',5)},
+choices:[{text:'继续深入',tag:'neutral',next:'miwu_deep'}]},
+miwu_shield:{text:[
+{type:'narration',content:'你运转金丹灵力，护住心脉，同时大喝一声，震散了魅妖的幻术。'},
+{type:'dialogue',speaker:'xie',content:'大师姐的修为，果然深不可测。'},
+{type:'narration',content:'魅妖见幻术被破，尖叫一声逃走了。'}],
+choices:[{text:'继续深入',tag:'neutral',next:'miwu_deep'}]},
+miwu_warn:{text:[
+{type:'narration',content:'你大声提醒众人。谢清晏反应极快，立刻以玄铁尺敲击地面，发出震耳欲聋的声响，盖过了歌声。'},
+{type:'dialogue',speaker:'xie',content:'没事了。'},
+{type:'dialogue',speaker:'shen',content:'师姐……谢谢你提醒我。我刚才差点就……'}],
+onEnter:function(){changeAffection('shen',1)},
+choices:[{text:'继续深入',tag:'neutral',next:'miwu_deep'}]},
+battle_win_miwu:{text:[
+{type:'narration',content:'雾妖被尽数消灭。它们消散后，雾气也淡了许多。'},
+{type:'narration',content:'你们继续前行，终于来到了迷雾林深处。'}],
+onEnter:function(){gainExp(1);addItem('shuangWenFrag',2)},
+choices:[{text:'继续',tag:'neutral',next:'miwu_deep'}]},
+miwu_deep:{text:[
+{type:'narration',content:'迷雾林深处，你们发现了一座破败的古祠。灵眼就在古祠之中。'},
+{type:'narration',content:'但古祠前，站着一个浑身笼罩在黑袍中的人。他身上的魔气，比玄冥教那些人浓了百倍。'},
+{type:'dialogue',speaker:'npc',content:'……又来一群送死的。凌霄宗的小娃娃，你们不该来这里。'},
+{type:'dialogue',speaker:'xie',content:'你是什么人？！'},
+{type:'dialogue',speaker:'npc',content:'我？我是这灵眼的守护者。或者说……是它的狱卒。'}],
+choices:[
+{text:'「让开，我们要激活灵眼。」',tag:'courage',next:'miwu_guardian_fight'},
+{text:'「你说灵眼是囚犯？这是什么意思？」',tag:'wisdom',next:'miwu_guardian_talk'},
+{text:'「沈夜，你退后。」（保护沈夜）',tag:'kind',next:'miwu_protect_shen'}
+]},
+miwu_guardian_fight:{text:[
+{type:'narration',content:'你不再多言，拔剑便上！黑袍人冷笑一声，魔气汹涌而出！'}],
+onEnter:function(){startBattle('miwu_guardian')},choices:[]},
+miwu_guardian_talk:{text:[
+{type:'narration',content:'你试图从他口中套出更多信息。黑袍人沉默了片刻。'},
+{type:'dialogue',speaker:'npc',content:'你倒是个聪明的娃娃。告诉你也无妨——这灵眼里，封印着一个东西。一个……不该存在于这个世界的东西。'},
+{type:'dialogue',speaker:'gu',content:'什么东西？'},
+{type:'dialogue',speaker:'npc',content:'上古魔神。千年前，仙门联军以无数生命为代价，将它封印在灵脉之中。灵脉枯萎，就是因为封印在不断抽取灵气来压制它。'},
+{type:'dialogue',speaker:'xie',content:'……不可能！如果是这样，激活灵眼不就等于——'},
+{type:'dialogue',speaker:'npc',content:'没错。激活灵眼，就是在削弱封印。你们每激活一处，它就离苏醒近一步。'},
+{type:'narration',content:'这个消息如晴天霹雳，让众人呆立当场。'}],
+onEnter:function(){gameState.flags.knowTruth=true},
+choices:[
+{text:'「你在编故事。我们不会上当。」',tag:'courage',next:'miwu_guardian_fight'},
+{text:'「那你为什么不直接毁掉灵眼？」',tag:'wisdom',next:'miwu_guardian_question'},
+{text:'「如果是真的……那我们该怎么办？」',tag:'kind',next:'miwu_guardian_help'}
+]},
+miwu_guardian_question:{text:[
+{type:'narration',content:'黑袍人苦笑一声。'},
+{type:'dialogue',speaker:'npc',content:'毁掉灵眼？封印一破，魔神立刻苏醒。我守在这里千年，就是为了维持平衡。但……我快撑不住了。'},
+{type:'dialogue',speaker:'npc',content:'你们的师尊，当年也是守护者之一。他闭关，就是为了寻找另一个方法。'},
+{type:'dialogue',speaker:'jiang',content:'师尊他……'},
+{type:'dialogue',speaker:'npc',content:'小娃娃，你手里的寻灵盘，不是用来找灵眼的。它是用来……重新封印的。'},
+{type:'narration',content:'你低头看向掌心的寻灵盘，它似乎比之前更烫了。'}],
+onEnter:function(){gameState.flags.knowDisk=true},
+choices:[
+{text:'「我凭什么相信你？」',tag:'wisdom',next:'miwu_guardian_fight'},
+{text:'「告诉我重新封印的方法。」',tag:'wisdom',next:'miwu_seal_method'}
+]},
+miwu_guardian_help:{text:[
+{type:'narration',content:'你语气诚恳。黑袍人看着你，眼中闪过一丝复杂的情绪。'},
+{type:'dialogue',speaker:'npc',content:'千年了……终于有人问我"该怎么办"，而不是"让开"。'},
+{type:'dialogue',speaker:'npc',content:'小娃娃，你心地不错。我告诉你一个秘密——灵眼可以激活，但激活后，必须用寻灵盘重新加固封印。这样既能恢复灵气，又不会放出魔神。'},
+{type:'dialogue',speaker:'npc',content:'但这需要极大的灵力和坚定的意志。你……能做到吗？'}],
+onEnter:function(){gameState.flags.knowSealMethod=true;changeAffection('xie',1)},
+choices:[
+{text:'「我能。」',tag:'courage',next:'miwu_seal_activate'},
+{text:'「让我和师弟们商量一下。」',tag:'wisdom',next:'miwu_discuss'}
+]},
+miwu_protect_shen:{text:[
+{type:'narration',content:'你下意识地将沈夜护在身后。黑袍人"咦"了一声。'},
+{type:'dialogue',speaker:'npc',content:'这孩子身上……有魔纹。有趣，有趣。'},
+{type:'dialogue',speaker:'shen',content:'你、你别过来！'},
+{type:'dialogue',speaker:'npc',content:'别紧张，小娃娃。我对他没有恶意。相反……他身上的魔纹，可能是解决这一切的关键。'},
+{type:'dialogue',speaker:'xie',content:'什么意思？'},
+{type:'dialogue',speaker:'npc',content:'魔纹是魔神之力的碎片。如果能引导这股力量，反而可以用来加固封印。但……风险极大。'}],
+onEnter:function(){gameState.flags.knowShenKey=true;changeAffection('shen',2)},
+choices:[
+{text:'「我不会拿沈夜冒险。」',tag:'kind',next:'miwu_guardian_fight'},
+{text:'「详细说说。」',tag:'wisdom',next:'miwu_shen_method'}
+]},
+miwu_shen_method:{text:[
+{type:'narration',content:'黑袍人详细解释了方法。沈夜听完，脸色苍白，但眼神坚定。'},
+{type:'dialogue',speaker:'shen',content:'师姐……如果、如果我能帮上忙，我愿意试试。'},
+{type:'dialogue',speaker:'jiang',content:'沈夜……'},
+{type:'dialogue',speaker:'shen',content:'我不想一直被师姐保护。我也想……保护师姐一次。'}],
+onEnter:function(){gameState.flags.shenWilling=true;changeAffection('shen',2)},
+choices:[
+{text:'「好，我们一起。但你要答应我，一旦失控就立刻停下。」',tag:'kind',next:'miwu_shen_seal'},
+{text:'「不行，太危险了。我们另想办法。」',tag:'kind',next:'miwu_guardian_fight'}
+]},
+miwu_seal_method:{text:[
+{type:'narration',content:'黑袍人将重新封印的方法详细告知于你。'},
+{type:'dialogue',speaker:'npc',content:'记住，激活灵眼后，立刻用寻灵盘引导灵气加固封印。时机只有一息之间，错过了，封印就会破损。'},
+{type:'dialogue',speaker:'npc',content:'我能帮你们的，就到这里了。接下来……看你们的了。'},
+{type:'narration',content:'黑袍人让开道路，走入阴影之中。'}],
+onEnter:function(){gameState.flags.guardianHelped=true},
+choices:[{text:'进入古祠，激活灵眼',tag:'courage',next:'miwu_activate'}]},
+miwu_seal_activate:{text:[
+{type:'narration',content:'黑袍人让开道路。你深吸一口气，率队走入古祠。'},
+{type:'narration',content:'灵眼悬浮在祠堂中央，散发着幽蓝的光芒。你按照黑袍人教的方法，先激活灵眼，再以寻灵盘加固封印。'},
+{type:'narration',content:'一切顺利。灵气复苏，封印也更加稳固。'},
+{type:'dialogue',speaker:'gu',content:'成功了！大师姐，你太厉害了！'},
+{type:'narration',content:'（全员经验+5，获得古镜碎片×1，霜纹碎片×2）'}],
+onEnter:function(){gainExp(5);addItem('guJingFrag',1);addItem('shuangWenFrag',2);updateMapEye('miwu','active');gameState.flags.miwuCleared=true;gameState.flags.sealed=true;completeQuest('q2');gameState.stones+=80},
+choices:[{text:'离开迷雾林，前往下一处',tag:'neutral',next:'chapter3_start'}]},
+miwu_shen_seal:{text:[
+{type:'narration',content:'沈夜走上前，手臂上的魔纹开始发光。你握住他的手，两人一同将力量注入灵眼。'},
+{type:'narration',content:'魔纹之力与灵气交融，竟然完美地加固了封印！灵眼爆发出璀璨的光芒。'},
+{type:'dialogue',speaker:'shen',content:'师姐……我做到了……我终于……能帮到你了……'},
+{type:'narration',content:'沈夜虚弱地倒在你怀中，但脸上带着满足的笑容。'},
+{type:'narration',content:'（沈夜体力-20，好感+3，获得古镜碎片×1，炎晶碎片×3）'}],
+onEnter:function(){damageChar('shen',20);changeAffection('shen',3);addItem('guJingFrag',1);addItem('yanJingFrag',3);updateMapEye('miwu','active');gameState.flags.miwuCleared=true;gameState.flags.sealed=true;gameState.flags.shenHero=true;completeQuest('q2');gameState.stones+=80},
+choices:[{text:'「沈夜，你做得很好。休息一下吧。」',tag:'kind',next:'chapter3_start'}]},
+miwu_discuss:{text:[
+{type:'narration',content:'你召集师弟们商量。谢清晏皱眉沉思，顾昭白摇着扇子，沈夜紧张地看着你。'},
+{type:'dialogue',speaker:'xie',content:'我觉得可以一试。大师姐的修为足够。'},
+{type:'dialogue',speaker:'gu',content:'我也觉得行。不过……如果失败了呢？'},
+{type:'dialogue',speaker:'shen',content:'我、我相信师姐！'},
+{type:'narration',content:'你看着信任你的师弟们，心中有了决断。'}],
+onEnter:function(){changeAffection('xie',1);changeAffection('shen',1)},
+choices:[{text:'「好，我们试试。」',tag:'courage',next:'miwu_seal_activate'}]},
+miwu_activate:{text:[
+{type:'narration',content:'你走入古祠，按照黑袍人教的方法激活灵眼并加固封印。过程有惊无险。'},
+{type:'narration',content:'（全员经验+5，获得古镜碎片×1）'}],
+onEnter:function(){gainExp(5);addItem('guJingFrag',1);updateMapEye('miwu','active');gameState.flags.miwuCleared=true;gameState.flags.sealed=true;completeQuest('q2');gameState.stones+=80},
+choices:[{text:'继续前进',tag:'neutral',next:'chapter3_start'}]},
+battle_win_guardian:{text:[
+{type:'narration',content:'经过一场苦战，黑袍人终于退去。他临走前留下一句话。'},
+{type:'dialogue',speaker:'npc',content:'愚蠢的娃娃……你们会后悔的。'},
+{type:'narration',content:'你不再理会他，走入古祠激活了灵眼。但你总觉得，有什么地方不对劲。'},
+{type:'narration',content:'（全员经验+5，体力-10，获得古镜碎片×1）'}],
+onEnter:function(){gainExp(5);damageAll(10);addItem('guJingFrag',1);updateMapEye('miwu','active');gameState.flags.miwuCleared=true;gameState.flags.foughtGuardian=true;completeQuest('q2');gameState.stones+=80},
+choices:[{text:'继续前进',tag:'neutral',next:'chapter3_start'}]},
+chapter3_start:{text:[
+{type:'narration',content:'离开迷雾林后，寻灵盘指向了繁华的烬火城。'},
+{type:'narration',content:'烬火城是南方最大的修仙城市，鱼龙混杂，三教九流汇聚于此。'},
+{type:'dialogue',speaker:'gu',content:'哎呀，终于到个有人烟的地方了！大师姐，我们去逛逛吧~'},
+{type:'dialogue',speaker:'xie',content:'正事要紧。先找灵眼。'},
+{type:'dialogue',speaker:'gu',content:'大师兄你真是不解风情~ 对了大师姐，烬火城我熟，我带你们去个好地方！'}],
+onEnter:function(){gameState.location='烬火城';gameState.chapter='第三章 · 烬火城';unlockMap('jinhuo')},
+choices:[
+{text:'「先去城主府打听灵眼的消息。」',tag:'wisdom',next:'jinhuo_castle'},
+{text:'「顾昭白，你说的好地方是哪里？」',tag:'neutral',next:'jinhuo_gu_place'},
+{text:'「先去客栈休息，明天再行动。」',tag:'kind',next:'jinhuo_inn'}
+]},
+jinhuo_castle:{text:[
+{type:'narration',content:'你们来到城主府。城主是个精明的中年人，听说你们是凌霄宗弟子，态度十分热情。'},
+{type:'dialogue',speaker:'npc',content:'凌霄宗的高徒光临，真是蓬荜生辉！灵眼的事……我确实知道一些。'},
+{type:'dialogue',speaker:'npc',content:'烬火城地下有一处灵眼，但被一个叫"烈火堂"的势力占据了。他们人多势众，连我也奈何不得。'},
+{type:'dialogue',speaker:'xie',content:'烈火堂？什么来头？'},
+{type:'dialogue',speaker:'npc',content:'据说是玄冥教的分支。为首的叫赤焰真人，金丹初期修为。'}],
+choices:[
+{text:'「我们去会会这个烈火堂。」',tag:'courage',next:'jinhuo_fight_prep'},
+{text:'「城主大人，能否借我们一些人手？」',tag:'wisdom',next:'jinhuo_request_help'},
+{text:'「先在城里调查一下烈火堂的底细。」',tag:'wisdom',next:'jinhuo_investigate'}
+]},
+jinhuo_gu_place:{text:[
+{type:'narration',content:'顾昭白带你们七拐八绕，来到了一间名为"醉仙楼"的酒楼。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，这里可是烬火城最好的酒楼！灵眼的事不急，先吃顿好的！'},
+{type:'narration',content:'你们在雅间坐下。酒过三巡，顾昭白忽然压低声音。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，其实我带你们来这里，是有原因的。这间酒楼的老板，是我的故人。她知道很多烬火城的秘密。'},
+{type:'narration',content:'正说着，一个红衣女子端着酒壶走了进来。她看到顾昭白，愣了一下。'},
+{type:'dialogue',speaker:'红绡',content:'……顾昭白？你还敢回来？'}],
+onEnter:function(){gameState.flags.guPast=true},
+choices:[
+{text:'「顾昭白，这是怎么回事？」',tag:'neutral',next:'jinhuo_gu_past'},
+{text:'「这位姑娘，请问你知道灵眼的事吗？」',tag:'wisdom',next:'jinhuo_ask_lingyan'}
+]},
+jinhuo_inn:{text:[
+{type:'narration',content:'你们在城中最好的客栈住下。众人连日奔波，确实需要休息。'},
+{type:'narration',content:'当晚，你正在房中调息，忽然听到隔壁传来争执声。是顾昭白和谢清晏。'},
+{type:'dialogue',speaker:'gu',content:'大师兄，你就不能对大师姐说点好听的吗？'},
+{type:'dialogue',speaker:'xie',content:'……与你无关。'},
+{type:'dialogue',speaker:'gu',content:'怎么与我无关？我看着都着急！你喜欢她就说啊，憋在心里算什么？'},
+{type:'dialogue',speaker:'xie',content:'顾昭白，你自己不也一样？'},
+{type:'narration',content:'隔壁陷入沉默。你站在门边，心中五味杂陈。'}],
+onEnter:function(){healAll(20);gameState.flags.heardConfession=true},
+choices:[
+{text:'假装没听到，回房休息',tag:'neutral',next:'jinhuo_next_day'},
+{text:'敲门进去，和他们谈谈',tag:'wisdom',next:'jinhuo_talk_boys'}
+]},
+jinhuo_talk_boys:{text:[
+{type:'narration',content:'你敲了敲门。里面一阵慌乱，然后谢清晏开了门，脸微微发红。'},
+{type:'dialogue',speaker:'jiang',content:'我都听到了。'},
+{type:'narration',content:'两人都沉默了。你叹了口气。'},
+{type:'dialogue',speaker:'jiang',content:'现在灵脉将枯，我们的首要任务是拯救修仙界。感情的事……等一切结束再说，好吗？'},
+{type:'dialogue',speaker:'xie',content:'……好。'},
+{type:'dialogue',speaker:'gu',content:'大师姐说得对。是我孟浪了。'},
+{type:'narration',content:'三人达成默契。你知道，有些事回避不了，但现在不是时候。'}],
+onEnter:function(){changeAffection('xie',1);changeAffection('gu',1)},
+choices:[{text:'回房休息',tag:'neutral',next:'jinhuo_next_day'}]},
+jinhuo_next_day:{text:[
+{type:'narration',content:'第二天一早，你们精神饱满地出发。根据寻灵盘的指引，灵眼就在城主府下方。'}],
+choices:[{text:'去城主府',tag:'neutral',next:'jinhuo_castle'}]},
+jinhuo_gu_past:{text:[
+{type:'narration',content:'顾昭白脸色一变，拉着你解释。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，这是红绡，醉仙楼的老板。我……以前在烬火城待过一段时间，和她有过一些……交情。'},
+{type:'dialogue',speaker:'红绡',content:'交情？顾昭白，你当年不告而别，现在带着这么漂亮的师姐回来，就是来跟我讲"交情"的？'},
+{type:'dialogue',speaker:'gu',content:'红绡，我当年是有苦衷的……'},
+{type:'narration',content:'红绡眼眶微红，但很快恢复了镇定。'},
+{type:'dialogue',speaker:'红绡',content:'罢了。你们来烬火城，是为了灵眼吧？我可以帮你们。'}],
+onEnter:function(){changeAffection('gu',1);gameState.flags.hongXiaoHelped=true},
+choices:[
+{text:'「多谢姑娘。请讲。」',tag:'kind',next:'jinhuo_hongxiao_info'},
+{text:'「你为什么要帮我们？」',tag:'wisdom',next:'jinhuo_hongxiao_why'}
+]},
+jinhuo_ask_lingyan:{text:[
+{type:'narration',content:'你直接问起灵眼。红绡看了顾昭白一眼，叹了口气。'},
+{type:'dialogue',speaker:'红绡',content:'看在他的面子上，我告诉你们。灵眼在城主府地下，但被烈火堂占据了。烈火堂的堂主赤焰真人，是玄冥教的金丹修士。'},
+{type:'dialogue',speaker:'红绡',content:'不过……他有个弱点。他每月十五会闭关修炼，那时是防守最薄弱的时候。'}],
+onEnter:function(){gameState.flags.knowWeakness=true},
+choices:[
+{text:'「今天是初几？」',tag:'wisdom',next:'jinhuo_check_date'},
+{text:'「多谢告知。我们这就去准备。」',tag:'neutral',next:'jinhuo_fight_prep'}
+]},
+jinhuo_hongxiao_info:{text:[
+{type:'dialogue',speaker:'红绡',content:'灵眼在城主府地下，被烈火堂占据。堂主赤焰真人是金丹初期，手下有二十多个筑基期修士。'},
+{type:'dialogue',speaker:'红绡',content:'不过他每月十五闭关，那时防守最弱。今天是十二，你们还有三天准备。'},
+{type:'dialogue',speaker:'红绡',content:'这三天，你们可以在城里收集情报、购买物资。需要帮忙的话，随时来找我。'}],
+onEnter:function(){gameState.flags.knowWeakness=true;gameState.flags.daysLeft=3},
+choices:[{text:'「多谢。我们先去城里准备。」',tag:'neutral',next:'jinhuo_prepare'}]},
+jinhuo_hongxiao_why:{text:[
+{type:'dialogue',speaker:'红绡',content:'为什么？因为烈火堂杀了我父亲，占了我家的产业。我忍了十年，就是等一个能推翻他们的机会。'},
+{type:'dialogue',speaker:'红绡',content:'你们凌霄宗，是我最好的机会。'},
+{type:'dialogue',speaker:'gu',content:'红绡……'},
+{type:'dialogue',speaker:'红绡',content:'顾昭白，你不用愧疚。当年的事，我不怪你了。'},
+{type:'narration',content:'红绡的眼中闪过一丝释然。'}],
+onEnter:function(){changeAffection('gu',2);gameState.flags.hongXiaoHelped=true;gameState.flags.knowWeakness=true},
+choices:[{text:'「我们一定会帮你报仇。」',tag:'courage',next:'jinhuo_hongxiao_info'}]},
+jinhuo_check_date:{text:[
+{type:'narration',content:'你一问才知，今天是十二。还有三天就是十五。'},
+{type:'dialogue',speaker:'gu',content:'三天时间，足够我们准备了！'}],
+onEnter:function(){gameState.flags.daysLeft=3},
+choices:[{text:'利用这三天做准备',tag:'neutral',next:'jinhuo_prepare'}]},
+jinhuo_prepare:{text:[
+{type:'narration',content:'还有几天时间。你可以在烬火城中做准备。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，如何安排？'}],
+choices:[
+{text:'去商城购买物资',tag:'wisdom',next:'jinhuo_shop'},
+{text:'让顾昭白去收集情报',tag:'wisdom',next:'jinhuo_intel'},
+{text:'让谢清晏布阵，提升队伍战力',tag:'wisdom',next:'jinhuo_array'},
+{text:'直接去城主府探查',tag:'courage',next:'jinhuo_scout_castle'},
+{text:'等到十五再行动',tag:'wisdom',next:'jinhuo_wait_15'}
+]},
+jinhuo_shop:{text:[
+{type:'narration',content:'你来到城中的商铺，购买所需物资。'},
+{type:'narration',content:'（购买完成后，请返回剧情面板继续行动）'}],
+onEnter:function(){switchPanel('shop')},choices:[]},
+jinhuo_intel:{text:[
+{type:'narration',content:'顾昭白领命出去，半天后带回了详细情报。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，我摸清了。城主府地下有三层，灵眼在最底层。烈火堂的人分布在一二层，赤焰真人在第三层闭关。'},
+{type:'dialogue',speaker:'gu',content:'另外，我还发现了一条密道，可以直接通到第二层。'},
+{type:'narration',content:'（获得重要情报：密道位置。战斗时可获得突袭加成）'}],
+onEnter:function(){gameState.flags.knowSecretPassage=true;notify('情报收集完成！','success')},
+choices:[{text:'继续准备',tag:'neutral',next:'jinhuo_prepare'}]},
+jinhuo_array:{text:[
+{type:'narration',content:'谢清晏花了一天时间，为众人炼制了一批增幅符箓。'},
+{type:'dialogue',speaker:'xie',content:'这些符箓可以在战斗中临时提升战力。每人三张。'},
+{type:'narration',content:'（获得符纸×6）'}],
+onEnter:function(){addItem('fuZhi',6);gameState.flags.hasTalismans=true;notify('符箓炼制完成！','success')},
+choices:[{text:'继续准备',tag:'neutral',next:'jinhuo_prepare'}]},
+jinhuo_scout_castle:{text:[
+{type:'narration',content:'你们悄悄来到城主府外探查。但被巡逻的修士发现了！'},
+{type:'dialogue',speaker:'npc',content:'什么人？！站住！'},
+{type:'narration',content:'你们不得不与巡逻队交手。'}],
+onEnter:function(){startBattle('jinhuo_patrol')},choices:[]},
+battle_win_patrol:{text:[
+{type:'narration',content:'巡逻队被击退，但你们也暴露了行踪。'},
+{type:'dialogue',speaker:'xie',content:'他们一定会加强戒备。我们必须尽快行动。'},
+{type:'narration',content:'（全员体力-8）'}],
+onEnter:function(){damageAll(8);gameState.flags.exposed=true;gainExp(1)},
+choices:[
+{text:'趁他们还没完全准备好，直接进攻！',tag:'courage',next:'jinhuo_fight'},
+{text:'先撤退，从长计议',tag:'wisdom',next:'jinhuo_prepare'}
+]},
+jinhuo_wait_15:{text:[
+{type:'narration',content:'你们等到十五。这天夜里，赤焰真人闭关，城主府防守果然松懈了许多。'},
+{type:'dialogue',speaker:'gu',content:'就是现在！大师姐，我们上吧！'}],
+onEnter:function(){gameState.flags.optimalTiming=true},
+choices:[{text:'进攻！',tag:'courage',next:'jinhuo_fight'}]},
+jinhuo_request_help:{text:[
+{type:'narration',content:'你向城主请求支援。城主面露难色。'},
+{type:'dialogue',speaker:'npc',content:'不是我不肯帮忙，实在是……烈火堂势大，我若公开与他们作对，全城百姓都要遭殃。'},
+{type:'dialogue',speaker:'npc',content:'不过……我可以私下给你们提供一些丹药和情报。'},
+{type:'narration',content:'（获得回灵丹×5，城主的情报）'}],
+onEnter:function(){addItem('huiLing',5);gameState.flags.castleHelp=true},
+choices:[{text:'「多谢城主。我们自己去。」',tag:'neutral',next:'jinhuo_fight_prep'}]},
+jinhuo_investigate:{text:[
+{type:'narration',content:'你们在城中调查了两天，摸清了烈火堂的底细。'},
+{type:'dialogue',speaker:'gu',content:'大师姐，查清楚了。赤焰真人是金丹初期，但他的功法有缺陷，每用一次大招就会虚弱一息。'},
+{type:'dialogue',speaker:'xie',content:'一息……足够了。'},
+{type:'narration',content:'（获得赤焰真人的弱点情报）'}],
+onEnter:function(){gameState.flags.knowBossWeakness=true},
+choices:[{text:'出发！',tag:'courage',next:'jinhuo_fight'}]},
+jinhuo_fight_prep:{text:[
+{type:'narration',content:'你们来到城主府外。府内守卫森严，但你们已经做好了准备。'}],
+choices:[
+{text:'正面强攻！',tag:'courage',next:'jinhuo_fight'},
+{text:'从密道潜入',tag:'wisdom',next:'jinhuo_sneak',condition:function(){return gameState.flags.knowSecretPassage}}
+]},
+jinhuo_sneak:{text:[
+{type:'narration',content:'你们从密道悄然潜入，一路避开守卫，直接来到了第二层。'},
+{type:'dialogue',speaker:'gu',content:'完美！接下来直接去第三层找赤焰真人！'}],
+onEnter:function(){gameState.flags.sneakSuccess=true},
+choices:[{text:'直奔第三层！',tag:'courage',next:'jinhuo_boss'}]},
+jinhuo_fight:{text:[
+{type:'narration',content:'你们杀入城主府！烈火堂的修士蜂拥而至！'}],
+onEnter:function(){startBattle('jinhuo_lietang')},choices:[]},
+battle_win_lietang:{text:[
+{type:'narration',content:'烈火堂的普通修士被击溃。你们一路杀到第三层，赤焰真人已经在那里等候。'},
+{type:'dialogue',speaker:'赤焰真人',content:'凌霄宗的小娃娃，有点本事。但你们以为，凭你们就能对付我？'},
+{type:'dialogue',speaker:'赤焰真人',content:'今天，就让你们见识一下金丹的真正力量！'}],
+choices:[{text:'「大家小心，一起上！」',tag:'courage',next:'jinhuo_boss'}]},
+jinhuo_boss:{text:[
+{type:'narration',content:'赤焰真人浑身燃起烈焰，恐怖的气息席卷全场！'}],
+onEnter:function(){startBattle('jinhuo_boss')},choices:[]},
+battle_win_boss:{text:[
+{type:'narration',content:'经过一场殊死搏斗，赤焰真人终于败北。他瘫倒在地，眼中满是不甘。'},
+{type:'dialogue',speaker:'赤焰真人',content:'不可能……我怎么会输……教主不会放过你们的……'},
+{type:'narration',content:'他说完便昏死过去。你们来到地下最深处，灵眼就在那里。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，激活灵眼吧。'}],
+onEnter:function(){gainExp(5);gameState.stones+=120;addItem('yanJingFrag',3);addItem('guJingFrag',1);updateMapEye('jinhuo','active');gameState.flags.jinhuoCleared=true;completeQuest('q3');if(gameState.flags.hongXiaoHelped)changeAffection('gu',2)},
+choices:[{text:'激活灵眼',tag:'neutral',next:'jinhuo_activate'}]},
+jinhuo_activate:{text:[
+{type:'narration',content:'你激活了灵眼。炽热的灵气冲天而起，烬火城的灵脉开始复苏。'},
+{type:'narration',content:'（若习得加固封印之法，你同时加固了封印。）'},
+{type:'dialogue',speaker:'gu',content:'三处灵眼了……大师姐，我们离真相越来越近了。'},
+{type:'narration',content:'寻灵盘再次指向北方——霜寒渊。据说那里，是师尊当年修行的地方。'}],
+onEnter:function(){if(gameState.flags.knowSealMethod)gameState.flags.seal3=true},
+choices:[{text:'前往霜寒渊',tag:'neutral',next:'chapter4_start'}]},
+chapter4_start:{text:[
+{type:'narration',content:'霜寒渊，终年积雪，寒气刺骨。这里是凌霄宗的发源地，也是师尊年轻时修行的地方。'},
+{type:'narration',content:'越往深处走，谢清晏的脸色越凝重。'},
+{type:'dialogue',speaker:'shen',content:'大师兄，你怎么了？'},
+{type:'dialogue',speaker:'xie',content:'……没什么。只是想起了一些往事。'},
+{type:'narration',content:'你注意到谢清晏的手在微微发抖。这里，一定有他不愿面对的回忆。'}],
+onEnter:function(){gameState.location='霜寒渊';gameState.chapter='第四章 · 霜寒渊';unlockMap('shuanghan')},
+choices:[
+{text:'「清晏，你没事吧？」',tag:'kind',next:'xie_concern'},
+{text:'「这里有什么特别的吗？」',tag:'wisdom',next:'xie_ask'},
+{text:'不追问，继续前进',tag:'neutral',next:'shuanghan_deep'}
+]},
+xie_concern:{text:[
+{type:'narration',content:'你轻声询问。谢清晏愣了一下，眼中闪过一丝感动。'},
+{type:'dialogue',speaker:'xie',content:'……大师姐，你还记得吗？十年前，我就是在这里被师尊救下的。'},
+{type:'dialogue',speaker:'xie',content:'那时我是个孤儿，差点冻死在雪地里。师尊把我带回凌霄宗，教我修行。'},
+{type:'dialogue',speaker:'xie',content:'但我一直不知道……师尊为什么会选我。我这样的人，值得吗？'},
+{type:'narration',content:'谢清晏的声音很低，带着你从未见过的脆弱。'}],
+onEnter:function(){changeAffection('xie',2);gameState.flags.xiePast=true},
+choices:[
+{text:'「当然值得。你是我最信任的大师兄。」',tag:'kind',next:'xie_comfort'},
+{text:'「师尊选你，一定有他的道理。」',tag:'wisdom',next:'xie_encourage'}
+]},
+xie_ask:{text:[
+{type:'narration',content:'你直接问起。谢清晏沉默了片刻。'},
+{type:'dialogue',speaker:'xie',content:'这里是师尊的修行之地，也是……他封印某个东西的地方。'},
+{type:'dialogue',speaker:'gu',content:'封印？大师兄你怎么知道？'},
+{type:'dialogue',speaker:'xie',content:'师尊闭关前，单独跟我说过一些话。他说，如果有一天他不在了，让我守护好霜寒渊。'},
+{type:'dialogue',speaker:'xie',content:'我当时不明白，现在……大概懂了。'}],
+onEnter:function(){gameState.flags.xieKnows=true;changeAffection('xie',1)},
+choices:[
+{text:'「师尊还说了什么？」',tag:'wisdom',next:'xie_more'},
+{text:'继续前进，看看就知道了',tag:'neutral',next:'shuanghan_deep'}
+]},
+xie_more:{text:[
+{type:'dialogue',speaker:'xie',content:'师尊说……灵脉枯萎的真相，就在霜寒渊最深处。他还说，寻灵盘不只是找灵眼的工具，它是……钥匙。'},
+{type:'dialogue',speaker:'xie',content:'具体是什么钥匙，他没说。他只让我记住一句话："当四眼齐明，真相自现。"'},
+{type:'narration',content:'四眼齐明……你们已经激活了三处灵眼。霜寒渊，就是第四处。'}],
+onEnter:function(){gameState.flags.knowFourEyes=true},
+choices:[{text:'「走，去最深处。」',tag:'courage',next:'shuanghan_deep'}]},
+xie_comfort:{text:[
+{type:'narration',content:'你认真地看着他的眼睛。谢清晏的眼眶微微泛红，用力点头。'},
+{type:'dialogue',speaker:'xie',content:'……谢谢你，大师姐。'},
+{type:'narration',content:'他重新振作起来，眼神比之前更加坚定。'}],
+onEnter:function(){changeAffection('xie',2)},
+choices:[{text:'继续前进',tag:'neutral',next:'shuanghan_deep'}]},
+xie_encourage:{text:[
+{type:'narration',content:'你鼓励他。谢清晏深吸一口气，点了点头。'},
+{type:'dialogue',speaker:'xie',content:'你说得对。师尊不会选错人。'}],
+onEnter:function(){changeAffection('xie',1)},
+choices:[{text:'继续前进',tag:'neutral',next:'shuanghan_deep'}]},
+shuanghan_deep:{text:[
+{type:'narration',content:'你们来到霜寒渊最深处。这里有一座巨大的冰宫，散发着古老而强大的气息。'},
+{type:'narration',content:'冰宫门前，站着一个白发老者。他的气息深不可测，竟然是……元婴期！'},
+{type:'dialogue',speaker:'npc',content:'终于来了。凌霄宗的小娃娃们，我等你们很久了。'},
+{type:'dialogue',speaker:'xie',content:'你是……'},
+{type:'dialogue',speaker:'npc',content:'我是这冰宫的守护者，也是你师尊的师兄。你们可以叫我……寒老。'}],
+choices:[
+{text:'「寒老，师尊在哪里？」',tag:'neutral',next:'hanlao_master'},
+{text:'「冰宫里有什么？」',tag:'wisdom',next:'hanlao_palace'},
+{text:'「你为什么等我们？」',tag:'wisdom',next:'hanlao_why'}
+]},
+hanlao_master:{text:[
+{type:'dialogue',speaker:'寒老',content:'你师尊……就在冰宫之中。但他不是在闭关，而是在……以自身为引，维持封印。'},
+{type:'dialogue',speaker:'jiang',content:'什么？！'},
+{type:'dialogue',speaker:'寒老',content:'千年前的封印，到如今已经摇摇欲坠。你师尊十年前就发现了这件事，他以自身金丹为代价，强行维持封印。'},
+{type:'dialogue',speaker:'寒老',content:'但这不是长久之计。他让你们去激活灵眼，就是为了……'},
+{type:'dialogue',speaker:'xie',content:'为了什么？'},
+{type:'dialogue',speaker:'寒老',content:'为了给你们争取时间，找到彻底解决的办法。而办法，就在这冰宫之中。'}],
+onEnter:function(){gameState.flags.knowMasterTruth=true},
+choices:[
+{text:'「我们要见师尊！」',tag:'courage',next:'hanlao_enter'},
+{text:'「彻底解决的办法是什么？」',tag:'wisdom',next:'hanlao_solution'}
+]},
+hanlao_palace:{text:[
+{type:'dialogue',speaker:'寒老',content:'冰宫里，封印着上古魔神的本体。千年前，仙门联军付出惨痛代价才将它封印于此。'},
+{type:'dialogue',speaker:'寒老',content:'灵脉枯萎，就是因为封印在不断抽取灵气。你们激活的三处灵眼，虽然恢复了灵气，但也削弱了封印。'},
+{type:'dialogue',speaker:'gu',content:'那……我们岂不是在帮倒忙？'},
+{type:'dialogue',speaker:'寒老',content:'不。激活灵眼是必要的。只有四眼齐明，才能启动上古大阵，彻底消灭魔神。'}],
+onEnter:function(){gameState.flags.knowPalace=true},
+choices:[{text:'「上古大阵？如何启动？」',tag:'wisdom',next:'hanlao_solution'}]},
+hanlao_why:{text:[
+{type:'dialogue',speaker:'寒老',content:'因为你们是师尊选中的人。尤其是你，江心月。'},
+{type:'dialogue',speaker:'寒老',content:'你的体质，是千年难遇的"灵体"。只有你，才能启动上古大阵。'},
+{type:'dialogue',speaker:'jiang',content:'灵体？我怎么不知道？'},
+{type:'dialogue',speaker:'寒老',content:'你师尊一直瞒着你，就是怕你有心理负担。但现在……是时候告诉你了。'}],
+onEnter:function(){gameState.flags.knowSpiritBody=true},
+choices:[{text:'「告诉我一切。」',tag:'neutral',next:'hanlao_solution'}]},
+hanlao_solution:{text:[
+{type:'dialogue',speaker:'寒老',content:'彻底消灭魔神的方法，就是启动"四灵归一阵"。需要四处灵眼同时激活，再由灵体之人以自身为媒介，将四处灵气汇聚，彻底净化魔神。'},
+{type:'dialogue',speaker:'寒老',content:'但这个方法……有代价。'},
+{type:'dialogue',speaker:'shen',content:'什么代价？'},
+{type:'dialogue',speaker:'寒老',content:'启动大阵的人，会耗尽全身修为，甚至……可能牺牲。'},
+{type:'narration',content:'众人沉默了。这个代价，太重了。'}],
+onEnter:function(){gameState.flags.knowFinalMethod=true},
+choices:[
+{text:'「我愿意。只要能拯救修仙界。」',tag:'courage',next:'final_accept'},
+{text:'「没有别的办法了吗？」',tag:'wisdom',next:'final_other'},
+{text:'「让我再想想。」',tag:'neutral',next:'final_think'}
+]},
+hanlao_enter:{text:[
+{type:'dialogue',speaker:'寒老',content:'你想见他？可以。但你要做好心理准备。'},
+{type:'narration',content:'寒老打开冰宫大门。你们走进去，看到了师尊。'},
+{type:'narration',content:'师尊悬浮在半空，浑身被金色的锁链缠绕，脸色苍白如纸。他的金丹已经暗淡无光。'},
+{type:'dialogue',speaker:'jiang',content:'师尊！'},
+{type:'dialogue',speaker:'师尊',content:'……心月？你来了。看来，四处灵眼，已经激活了三处。'},
+{type:'dialogue',speaker:'师尊',content:'好孩子……为师快撑不住了。接下来的事，就交给你了。'}],
+onEnter:function(){gameState.flags.metMaster=true},
+choices:[
+{text:'「师尊，我一定会救你出来！」',tag:'courage',next:'final_save_master'},
+{text:'「师尊，到底该怎么做？」',tag:'wisdom',next:'hanlao_solution'}
+]},
+final_save_master:{text:[
+{type:'dialogue',speaker:'师尊',content:'傻孩子……救我？想要救我，就必须先消灭魔神。而消灭魔神的方法……需要牺牲。'},
+{type:'dialogue',speaker:'师尊',content:'但你要记住，牺牲不是唯一的路。如果你们足够强，或许……能找到第三条路。'},
+{type:'dialogue',speaker:'师尊',content:'去吧。激活第四处灵眼。然后……做出你们的选择。'}],
+onEnter:function(){gameState.flags.knowThirdWay=true},
+choices:[{text:'「弟子明白了。」',tag:'neutral',next:'final_activate'}]},
+final_accept:{text:[
+{type:'narration',content:'你毫不犹豫地答应了。三位师弟同时上前。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，我不准你一个人牺牲。要去，我陪你一起。'},
+{type:'dialogue',speaker:'gu',content:'就是！大师姐你别想一个人当英雄！'},
+{type:'dialogue',speaker:'shen',content:'师姐……我、我也要和你在一起！'},
+{type:'narration',content:'你看着他们，眼眶微热。有这样的师弟，你还有什么好怕的？'}],
+onEnter:function(){changeAffection('xie',1);changeAffection('gu',1);changeAffection('shen',2);gameState.flags.allTogether=true},
+choices:[{text:'「好，我们一起。」',tag:'kind',next:'final_activate'}]},
+final_other:{text:[
+{type:'dialogue',speaker:'寒老',content:'别的办法……理论上，如果有四个人同时分担，每个人只需要付出四分之一的代价。但这需要四人心意相通，且修为不能相差太大。'},
+{type:'dialogue',speaker:'xie',content:'我们可以。'},
+{type:'dialogue',speaker:'gu',content:'没错！我们四个，一起！'},
+{type:'dialogue',speaker:'shen',content:'我也可以！'},
+{type:'narration',content:'你看着他们坚定的眼神，心中涌起一股暖流。'}],
+onEnter:function(){gameState.flags.shareMethod=true;changeAffection('xie',1);changeAffection('gu',1);changeAffection('shen',1)},
+choices:[{text:'「好，我们一起分担。」',tag:'kind',next:'final_activate'}]},
+final_think:{text:[
+{type:'narration',content:'你陷入沉思。谢清晏走到你身边。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，不管你做什么决定，我都支持你。'},
+{type:'dialogue',speaker:'gu',content:'对啊，别一个人扛着。'},
+{type:'dialogue',speaker:'shen',content:'师姐……'},
+{type:'narration',content:'你深吸一口气，做出了决定。'}],
+choices:[{text:'「我决定了，我们一起面对。」',tag:'courage',next:'final_activate'}]},
+final_activate:{text:[
+{type:'narration',content:'你们来到冰宫深处，第四处灵眼就在这里。它比前三处都要巨大，散发着幽蓝的寒光。'},
+{type:'narration',content:'你走上前，将寻灵盘放在灵眼之上。四处灵眼同时共鸣，天地变色！'},
+{type:'dialogue',speaker:'寒老',content:'四眼齐明！大阵启动了！孩子们，接下来……就看你们的了！'},
+{type:'narration',content:'冰宫开始震动，封印碎裂，一个巨大的黑影从地底升起——上古魔神，苏醒了！'},
+{type:'dialogue',speaker:'魔神',content:'千年了……终于，自由了！渺小的人类，准备迎接毁灭吧！'}],
+onEnter:function(){updateMapEye('shuanghan','active');gameState.flags.shuanghanCleared=true;unlockMap('lingyuan')},
+choices:[{text:'「大家，准备战斗！」',tag:'courage',next:'final_boss'}]},
+final_boss:{text:[
+{type:'narration',content:'上古魔神的力量超乎想象！这是最终决战！'}],
+onEnter:function(){startBattle('final_boss')},choices:[]},
+battle_win_final:{text:[
+{type:'narration',content:'经过一场惊天动地的战斗，魔神终于被你们击败！'},
+{type:'narration',content:'但它的本体还在做最后的挣扎。是时候启动四灵归一阵了。'}],
+choices:[{text:'启动大阵！',tag:'courage',next:'ending_choice'}]},
+ending_choice:{text:[
+{type:'narration',content:'你站在大阵中央，四处灵眼的力量汇聚于你一身。'},
+{type:'narration',content:'你感到自己的修为在飞速流逝，但魔神也在被净化。'},
+{type:'dialogue',speaker:'xie',content:'大师姐！我们来帮你！'},
+{type:'narration',content:'三位师弟同时将手搭在你肩上，四人的力量融为一体。'},
+{type:'narration',content:'最终的时刻到了。你必须做出选择——'}],
+choices:[
+{text:'「以我之命，换天地安宁！」（独自承担）',tag:'courage',next:'ending_sacrifice'},
+{text:'「四人同心，其利断金！」（共同承担）',tag:'kind',next:'ending_together',condition:function(){return gameState.flags.shareMethod||gameState.flags.allTogether}},
+{text:'「师尊说过，还有第三条路！」（寻找完美解法）',tag:'wisdom',next:'ending_perfect',condition:function(){return gameState.flags.knowThirdWay&&getTotalAffection()>=15}}
+]},
+ending_sacrifice:{text:[
+{type:'narration',content:'你推开师弟们，将所有力量汇聚于自身。'},
+{type:'dialogue',speaker:'jiang',content:'清晏，昭白，沈夜……以后凌霄宗，就交给你们了。'},
+{type:'dialogue',speaker:'xie',content:'大师姐！不要！'},
+{type:'dialogue',speaker:'shen',content:'师姐——！！'},
+{type:'narration',content:'你爆发出最后的光芒，魔神在惨叫中被彻底净化。'},
+{type:'narration',content:'灵脉恢复了，天地间充满了久违的灵气。但你……化作了漫天光点，消散在风中。'},
+{type:'narration',content:'多年后，修仙界流传着一个传说——凌霄宗大师姐江心月，以一己之力拯救了天下。'},
+{type:'narration',content:'而在凌霄宗的山门前，三个身影常年伫立，望着南方，等待着一个永远不会回来的人。'}],
+ending:'sacrifice'},
+ending_together:{text:[
+{type:'narration',content:'四人手牵手，心意相通。四处灵眼的力量被平均分担，每个人都只付出了一部分修为。'},
+{type:'narration',content:'魔神在四人合力下被彻底净化，灵脉恢复了生机。'},
+{type:'dialogue',speaker:'gu',content:'我们……成功了？我还活着？哈哈哈，我还活着！'},
+{type:'dialogue',speaker:'shen',content:'师姐……我们做到了。'},
+{type:'dialogue',speaker:'xie',content:'大师姐，谢谢你。没有你，我们做不到。'},
+{type:'narration',content:'你们虽然都失去了部分修为，但都活了下来。师尊也被从封印中解救出来。'},
+{type:'narration',content:'多年后，凌霄宗成为修仙界第一大宗。而你们四人的故事，被代代传颂。'},
+{type:'narration',content:'至于你最终选择了谁……那就是另一个故事了。'}],
+ending:'together'},
+ending_perfect:{text:[
+{type:'narration',content:'你想起师尊的话——"牺牲不是唯一的路。"'},
+{type:'narration',content:'你闭上眼睛，感受着四处灵眼的力量，感受着师弟们的心意，感受着天地间的灵气。'},
+{type:'narration',content:'你忽然明白了——四灵归一阵的真正含义，不是牺牲，而是"归"。'},
+{type:'narration',content:'灵气来自天地，也应归于天地。魔神的力量，本质上也是天地灵气的一部分，只是被扭曲了。'},
+{type:'dialogue',speaker:'jiang',content:'我明白了……不是消灭，而是净化！不是牺牲，而是归还！'},
+{type:'narration',content:'你改变了大阵的运行方式，将魔神的力量净化后归还给天地。'},
+{type:'narration',content:'没有牺牲，没有毁灭。只有净化，只有重生。'},
+{type:'narration',content:'灵脉不仅恢复了，甚至比千年前更加旺盛。修仙界迎来了前所未有的黄金时代。'},
+{type:'dialogue',speaker:'师尊',content:'心月……你做到了为师都没能做到的事。你超越了我。'},
+{type:'dialogue',speaker:'寒老',content:'了不起……真是了不起！千年的困局，竟然被你这样解开了！'},
+{type:'narration',content:'你成为了修仙界的传奇。而你的师弟们，也都成长为独当一面的强者。'},
+{type:'narration',content:'多年后，你站在凌霄宗的山巅，看着下方繁荣的宗门，身边是你最信任的人。'},
+{type:'narration',content:'这是最好的结局。'}],
+ending:'perfect'}
+};
+const BATTLES={
+forest_beasts:{name:'林中妖兽',enemies:[{name:'妖兽',hp:60,maxHp:60,atk:8,def:2}],onWin:'battle_win_forest'},
+road_bandits:{name:'劫匪',enemies:[{name:'劫匪甲',hp:40,maxHp:40,atk:6,def:1},{name:'劫匪乙',hp:40,maxHp:40,atk:6,def:1}],onWin:'battle_win_bandits'},
+qingmu_xuanming:{name:'玄冥教修士',enemies:[{name:'玄冥教徒',hp:50,maxHp:50,atk:7,def:2},{name:'玄冥教徒',hp:50,maxHp:50,atk:7,def:2},{name:'玄冥头目',hp:80,maxHp:80,atk:10,def:3}],onWin:'battle_win_qingmu'},
+miwu_wraiths:{name:'雾妖群',enemies:[{name:'雾妖',hp:35,maxHp:35,atk:9,def:1},{name:'雾妖',hp:35,maxHp:35,atk:9,def:1},{name:'雾妖',hp:35,maxHp:35,atk:9,def:1}],onWin:'battle_win_miwu'},
+miwu_guardian:{name:'灵眼守护者',enemies:[{name:'黑袍守护者',hp:150,maxHp:150,atk:14,def:5}],onWin:'battle_win_guardian'},
+jinhuo_patrol:{name:'城主府巡逻队',enemies:[{name:'巡逻修士',hp:45,maxHp:45,atk:7,def:2},{name:'巡逻修士',hp:45,maxHp:45,atk:7,def:2}],onWin:'battle_win_patrol'},
+jinhuo_lietang:{name:'烈火堂修士',enemies:[{name:'烈火堂弟子',hp:55,maxHp:55,atk:8,def:3},{name:'烈火堂弟子',hp:55,maxHp:55,atk:8,def:3},{name:'烈火堂弟子',hp:55,maxHp:55,atk:8,def:3}],onWin:'battle_win_lietang'},
+jinhuo_boss:{name:'赤焰真人',enemies:[{name:'赤焰真人',hp:200,maxHp:200,atk:16,def:6}],onWin:'battle_win_boss'},
+final_boss:{name:'上古魔神',enemies:[{name:'上古魔神',hp:400,maxHp:400,atk:22,def:8}],onWin:'battle_win_final'}
+};
+function renderStory(){
+let node=STORY[gameState.currentNode];if(!node)return;
+let container=document.getElementById('story-content');
+if(node.text){
+for(let t of node.text){
+let div=document.createElement('div');div.className='story-node';
+if(t.type==='narration'){
+div.innerHTML='<div class="narration">'+t.content+'</div>';
+}else if(t.type==='dialogue'){
+let sp=t.speaker;
+if(gameState.characters[sp])sp=gameState.characters[sp].name;
+else if(sp==='npc')sp='？？？';
+div.innerHTML='<div class="dialogue"><div class="speaker '+t.speaker+'">'+sp+'：</div><div class="text">'+t.content+'</div></div>';
+}
+container.appendChild(div);
+}
+}
+if(node.onEnter)node.onEnter();
+let cc=document.getElementById('choices-content');cc.innerHTML='';
+if(node.ending){showEnding(node.ending);return;}
+if(node.choices&&node.choices.length>0){
+for(let ch of node.choices){
+if(ch.condition&&!ch.condition())continue;
+let btn=document.createElement('button');btn.className='choice-btn';
+let th='';
+if(ch.tag){let tn={courage:'勇气',wisdom:'智慧',kind:'仁心',neutral:'中立'};th='<span class="choice-tag tag-'+ch.tag+'">'+(tn[ch.tag]||ch.tag)+'</span>';}
+btn.innerHTML=th+ch.text;
+btn.onclick=function(){makeChoice(ch)};
+cc.appendChild(btn);
+}
+}
+setTimeout(function(){document.getElementById('content-panel').scrollTop=document.getElementById('content-panel').scrollHeight},100);
+updateUI();
+}
+function makeChoice(choice){
+gameState.choicesMade++;
+if(choice.panel){switchPanel(choice.panel);return;}
+gameState.currentNode=choice.next;
+renderStory();
+}
+let battleState=null;
+function startBattle(battleId){
+let b=BATTLES[battleId];if(!b)return;
+battleState={id:battleId,name:b.name,enemies:JSON.parse(JSON.stringify(b.enemies)),onWin:b.onWin,turn:'player',log:[],defending:false};
+document.getElementById('battle-title').textContent=b.name;
+document.getElementById('battle-overlay').style.display='flex';
+renderBattle();
+}
+function renderBattle(){
+if(!battleState)return;
+let ah='';
+for(let c in gameState.characters){let ch=gameState.characters[c];let p=(ch.hp/ch.maxHp)*100;
+ah+='<div class="battle-char"><div class="battle-char-name" style="color:'+(c==='jiang'?'#f472b6':c==='xie'?'#a78bfa':c==='gu'?'#34d399':'#fb923c')+'">'+ch.name+' Lv.'+ch.level+'</div><div class="battle-char-hp"><div class="battle-char-hp-fill" style="width:'+p+'%"></div></div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+ch.hp+'/'+ch.maxHp+'</div></div>';}
+document.getElementById('battle-allies').innerHTML=ah;
+let eh='';
+battleState.enemies.forEach(function(e){if(e.hp<=0)return;let p=(e.hp/e.maxHp)*100;
+eh+='<div class="battle-enemy"><div class="battle-enemy-name">'+e.name+'</div><div class="battle-char-hp" style="margin-top:6px;"><div class="battle-char-hp-fill" style="width:'+p+'%;background:linear-gradient(90deg,#ef4444,#f87171)"></div></div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+e.hp+'/'+e.maxHp+'</div></div>';});
+document.getElementById('battle-enemies').innerHTML=eh;
+document.getElementById('battle-log').innerHTML=battleState.log.slice(-8).join('<br>');
+if(battleState.turn==='player'){
+document.getElementById('battle-actions').innerHTML='<button class="battle-btn attack" onclick="battleAction(\'attack\')">⚔️ 攻击</button><button class="battle-btn skill" onclick="battleAction(\'skill\')">✨ 技能</button><button class="battle-btn defend" onclick="battleAction(\'defend\')">🛡️ 防御</button><button class="battle-btn item" onclick="battleAction(\'item\')">💊 道具</button>';
+}else{document.getElementById('battle-actions').innerHTML='';}
+}
+function battleAction(action){
+if(battleState.turn!=='player')return;
+let alive=battleState.enemies.filter(function(e){return e.hp>0});
+if(alive.length===0)return;
+let target=alive[0];
+let player=gameState.characters.jiang;
+let damage=0,logMsg='';
+if(action==='attack'){
+damage=Math.max(1,Math.floor(player.level*1.5+Math.random()*10)-target.def);target.hp-=damage;
+logMsg='<span class="log-info">江心月 发动攻击！</span> 对 '+target.name+' 造成 <span class="log-damage">'+damage+'</span> 点伤害！';
+}else if(action==='skill'){
+damage=Math.max(1,Math.floor(player.level*2.5+Math.random()*15)-target.def);target.hp-=damage;
+logMsg='<span class="log-info">江心月 发动【承影剑诀】！</span> 对 '+target.name+' 造成 <span class="log-damage">'+damage+'</span> 点伤害！';
+['xie','gu','shen'].forEach(function(a){if(gameState.characters[a].hp>0){let d=Math.max(1,Math.floor(gameState.characters[a].level*1.2+Math.random()*8)-target.def);target.hp-=d;logMsg+='<br><span class="log-info">'+gameState.characters[a].name+' 协同攻击！</span> 造成 <span class="log-damage">'+d+'</span> 点伤害！';}});
+}else if(action==='defend'){
+battleState.defending=true;logMsg='<span class="log-info">全队进入防御姿态！</span> 下回合受到伤害减半。';
+}else if(action==='item'){
+if(gameState.inventory.huiLing&&gameState.inventory.huiLing>0){removeItem('huiLing',1);healAll(20);logMsg='<span class="log-heal">使用回灵丹！</span> 全队恢复 20 点体力！';}
+else{notify('没有可用的丹药！','warning');return;}
+}
+battleState.log.push(logMsg);renderBattle();
+if(battleState.enemies.every(function(e){return e.hp<=0})){setTimeout(function(){endBattle(true)},800);return;}
+battleState.turn='enemy';setTimeout(function(){enemyTurn()},1000);
+}
+function enemyTurn(){
+if(!battleState)return;
+let alive=battleState.enemies.filter(function(e){return e.hp>0});
+alive.forEach(function(enemy){
+let targets=Object.keys(gameState.characters).filter(function(c){return gameState.characters[c].hp>0});
+if(targets.length===0)return;
+let t=targets[Math.floor(Math.random()*targets.length)];
+let dmg=Math.max(1,Math.floor(enemy.atk+Math.random()*6)-Math.floor(gameState.characters[t].level/10));
+if(battleState.defending)dmg=Math.floor(dmg/2);
+damageChar(t,dmg);
+battleState.log.push('<span class="log-damage">'+enemy.name+' 攻击 '+gameState.characters[t].name+'！</span> 造成 <span class="log-damage">'+dmg+'</span> 点伤害！');
+});
+battleState.defending=false;renderBattle();
+if(gameState.characters.jiang.hp<=0){setTimeout(function(){endBattle(false)},800);return;}
+battleState.turn='player';renderBattle();
+}
+function endBattle(won){
+document.getElementById('battle-overlay').style.display='none';
+if(won){
+notify('战斗胜利！','success');
+gameState.currentNode=battleState.onWin;battleState=null;renderStory();
+}else{
+notify('战斗失败……但你不能放弃！','danger');
+healAll(30);
+gameState.currentNode=battleState.onWin||gameState.currentNode;battleState=null;renderStory();
+}
+}
+function switchPanel(panel){
+document.querySelectorAll('.panel-view').forEach(function(p){p.classList.remove('active')});
+document.querySelectorAll('.menu-btn').forEach(function(b){b.classList.remove('active')});
+document.getElementById('panel-'+panel).classList.add('active');
+document.querySelector('.menu-btn[data-panel="'+panel+'"]').classList.add('active');
+let ca=document.getElementById('choices-area');
+if(panel==='story'){ca.style.display='block';}else{ca.style.display='none';}
+if(panel==='team')renderTeamPanel();
+if(panel==='quest')renderQuestPanel();
+if(panel==='map')renderMapPanel();
+if(panel==='bag')renderBagPanel();
+if(panel==='shop')renderShopPanel();
+if(panel==='hint')renderHintPanel();
+}
+function renderTeamPanel(){
+let html='';
+for(let c in gameState.characters){let ch=gameState.characters[c];
+let hpP=(ch.hp/ch.maxHp)*100;let hpC=hpP>50?'#22c55e':hpP>25?'#f59e0b':'#ef4444';
+let ri=REALMS.indexOf(ch.realm);
+let rh=REALMS.map(function(r,i){return '<span class="realm-step '+(i===ri?'current':i<ri?'passed':'')+'">'+r+'</span>'}).join('→');
+let st={normal:'正常',injured:'轻伤',weak:'虚弱'}[ch.status]||'正常';
+let sc={normal:'status-normal',injured:'status-injured',weak:'status-weak'}[ch.status]||'status-normal';
+let ap=Math.min(100,(ch.affection/20)*100);
+html+='<div class="character-card"><div class="char-header"><div><span class="char-name '+c+'">'+ch.name+'</span><span class="char-role">'+ch.role+'</span><span class="char-status '+sc+'">'+st+'</span></div><span class="char-level">Lv.'+ch.level+' '+ch.realm+'</span></div><div class="realm-bar">'+rh+'</div><div class="stat-row"><div class="stat-item hp-bar-wrap"><span class="stat-label">体力</span><span class="stat-value">'+ch.hp+'/'+ch.maxHp+'</span><div class="hp-bar-bg"><div class="hp-bar-fill" style="width:'+hpP+'%;background:'+hpC+'"></div></div></div></div><div class="stat-row"><div class="stat-item"><span class="stat-label">法器：</span><span class="stat-value">'+ch.weapon+' Lv.'+ch.weaponLv+'</span></div></div>'+(!ch.isPlayer?'<div class="affection-bar"><span class="affection-label">好感度：'+ch.affection+'</span><div class="affection-bg"><div class="affection-fill" style="width:'+ap+'%"></div></div></div>':'')+'</div>';}
+document.getElementById('team-content').innerHTML=html;
+}
+function renderQuestPanel(){
+let html='<div class="task-section"><div class="task-section-title">主线任务</div>';
+gameState.quests.main.forEach(function(q){
+let sc=q.status==='active'?'status-active':q.status==='done'?'status-done':'status-locked';
+let st=q.status==='active'?'进行中':q.status==='done'?'已完成':'未解锁';
+html+='<div class="task-card '+(q.status==='done'?'done':'')+'"><div class="task-title-row"><span class="task-name">'+q.name+'</span><span class="task-status '+sc+'">'+st+'</span></div><div class="task-desc">'+q.desc+'</div><div class="task-reward">奖励：'+q.reward+'</div></div>';});
+html+='</div><div class="task-section"><div class="task-section-title">支线任务</div>';
+if(gameState.quests.side.length===0)html+='<div class="inv-empty">暂无支线任务</div>';
+html+='</div>';
+document.getElementById('quest-content').innerHTML=html;
+}
+function renderMapPanel(){
+let html='<div class="map-container">';
+gameState.map.forEach(function(node,i){
+let dc=node.status==='current'?'current':node.status==='visited'?'visited':'locked';
+let ec=node.eye==='active'?'eye-active':node.eye==='strong'?'eye-strong':'eye-weak';
+let et=node.eye==='active'?'已激活':node.eye==='strong'?'反应强烈':node.eye==='weak'?'反应微弱':'';
+let info=node.status==='current'?'当前位置':node.status==='visited'?'已通过':'未发现';
+html+='<div class="map-node '+node.status+'"><div class="map-dot '+dc+'"></div><div><span class="map-name '+node.status+'">'+node.name+'</span>'+(node.eye!=='none'?'<span class="spirit-eye-status '+ec+'">灵眼：'+et+'</span>':'')+'</div><span class="map-info">'+info+'</span></div>';
+if(i<gameState.map.length-1)html+='<div class="map-connector"></div>';});
+html+='<div style="text-align:right;margin-top:20px;color:#f472b6;font-size:14px;">北 ↑ &nbsp;&nbsp; 南 ↓</div></div>';
+document.getElementById('map-content').innerHTML=html;
+}
+function renderBagPanel(){
+let html='<div class="stone-display">💰 灵石：'+gameState.stones+'</div>';
+let cats={pill:{name:'丹药类',items:[]},material:{name:'材料类',items:[]},fragment:{name:'法器碎片类',items:[]},special:{name:'特殊物品类',items:[]}};
+for(let id in gameState.inventory){if(gameState.inventory[id]>0&&ITEMS[id])cats[ITEMS[id].type].items.push({id:id,count:gameState.inventory[id]});}
+for(let cat in cats){
+html+='<div class="inventory-section"><div class="inv-section-title">'+cats[cat].name+'</div>';
+if(cats[cat].items.length===0){html+='<div class="inv-empty">暂无物品</div>';}
+else{html+='<div class="inv-grid">';cats[cat].items.forEach(function(it){html+='<div class="inv-item"><div><div class="inv-item-name">'+ITEMS[it.id].name+'</div><div class="inv-item-desc">'+ITEMS[it.id].desc+'</div></div><span class="inv-item-count">×'+it.count+'</span></div>';});html+='</div>';}
+html+='</div>';
+}
+document.getElementById('bag-content').innerHTML=html;
+}
+function renderShopPanel(){
+let html='<div class="stone-display">💰 当前灵石：'+gameState.stones+'</div>';
+html+='<button class="back-btn" onclick="switchPanel(\'story\')">← 返回剧情</button>';
+html+='<div class="inventory-section"><div class="inv-section-title">消耗品</div>';
+SHOP_ITEMS.forEach(function(id){let it=ITEMS[id];let can=gameState.stones>=it.price;
+html+='<div class="shop-item"><div class="shop-item-info"><div class="shop-item-name">'+it.name+'</div><div class="shop-item-desc">'+it.desc+'</div></div><span class="shop-item-price">'+it.price+' 灵石</span><button class="buy-btn" '+(can?'':'disabled')+' onclick="buyItem(\''+id+'\')">购买</button></div>';});
+html+='</div>';
+document.getElementById('shop-content').innerHTML=html;
+}
+function buyItem(id){let it=ITEMS[id];if(gameState.stones>=it.price){gameState.stones-=it.price;addItem(id,1);renderShopPanel();updateUI();}else{notify('灵石不足！','warning');}}
+function renderHintPanel(){
+let html='<div class="tip-section"><div class="tip-section-title">主线与支线</div>';
+let aq=gameState.quests.main.find(function(q){return q.status==='active'});
+if(aq)html+='<div class="tip-item">当前主线：'+aq.name+' — '+aq.desc+'</div>';
+html+='</div><div class="tip-section"><div class="tip-section-title">角色互动</div>';
+['xie','gu','shen'].forEach(function(c){let ch=gameState.characters[c];
+if(ch.hp<20)html+='<div class="tip-item urgent">'+ch.name+' 体力过低，建议使用丹药恢复！</div>';
+if(ch.status!=='normal')html+='<div class="tip-item urgent">'+ch.name+' 状态异常：'+ch.status+'</div>';});
+if(gameState.characters.shen.affection>=5)html+='<div class="tip-item">沈夜非常依赖你，多关心他可能会有意外收获。</div>';
+html+='</div><div class="tip-section"><div class="tip-section-title">系统操作</div>';
+for(let id in gameState.inventory){if(ITEMS[id]&&ITEMS[id].type==='fragment'&&gameState.inventory[id]>=5)html+='<div class="tip-item urgent">'+ITEMS[id].name+'已集齐5个，可以合成/强化法器！</div>';}
+if(gameState.stones>50)html+='<div class="tip-item">你有较多灵石，可以去商城购买物资。</div>';
+html+='<div class="tip-item">激活灵眼可以获得大量经验和稀有材料。</div></div>';
+document.getElementById('hint-content').innerHTML=html;
+}
+function updateUI(){
+document.getElementById('current-location').textContent=gameState.location;
+document.getElementById('current-chapter').textContent=gameState.chapter;
+document.getElementById('sidebar-stones').textContent=gameState.stones;
+let hh='';
+['jiang','xie','gu','shen'].forEach(function(c){let ch=gameState.characters[c];let p=(ch.hp/ch.maxHp)*100;let cls=p>50?'':p>25?'mid':'low';
+hh+='<div class="hp-mini"><span class="name">'+ch.name+'</span><div class="bar"><div class="bar-fill '+cls+'" style="width:'+p+'%"></div></div></div>';});
+document.getElementById('team-hp-display').innerHTML=hh;
+let ap=document.querySelector('.panel-view.active');
+if(ap){let pid=ap.id.replace('panel-','');
+if(pid==='team')renderTeamPanel();
+if(pid==='bag')renderBagPanel();
+if(pid==='shop')renderShopPanel();}
+}
+function showEnding(type){
+let titles={sacrifice:{title:'牺牲结局',subtitle:'— 以身殉道，万古流芳 —',cls:'bad'},together:{title:'同心结局',subtitle:'— 四人同心，其利断金 —',cls:'good'},perfect:{title:'完美结局',subtitle:'— 灵脉复苏，天下太平 —',cls:'true'}};
+let info=titles[type]||titles.together;
+document.getElementById('ending-title').textContent=info.title;
+document.getElementById('ending-title').className='ending-title '+info.cls;
+document.getElementById('ending-subtitle').textContent=info.subtitle;
+let statsHtml='<div class="ending-stat"><div class="ending-stat-label">做出选择</div><div class="ending-stat-value">'+gameState.choicesMade+'</div></div><div class="ending-stat"><div class="ending-stat-label">激活灵眼</div><div class="ending-stat-value">'+gameState.map.filter(function(m){return m.eye==='active'}).length+'/4</div></div><div class="ending-stat"><div class="ending-stat-label">谢清晏好感</div><div class="ending-stat-value">'+gameState.characters.xie.affection+'</div></div><div class="ending-stat"><div class="ending-stat-label">顾昭白好感</div><div class="ending-stat-value">'+gameState.characters.gu.affection+'</div></div><div class="ending-stat"><div class="ending-stat-label">沈夜好感</div><div class="ending-stat-value">'+gameState.characters.shen.affection+'</div></div>';
+document.getElementById('ending-stats').innerHTML=statsHtml;
+document.getElementById('ending-screen').style.display='flex';
+}
+function saveGame(){try{localStorage.setItem('lingmai_save',JSON.stringify(gameState));notify('游戏已保存！','success');}catch(e){notify('保存失败：'+e.message,'danger');}}
+function loadGame(){try{let d=localStorage.getItem('lingmai_save');if(d){gameState=JSON.parse(d);return true;}}catch(e){}return false;}
+function hasSave(){return localStorage.getItem('lingmai_save')!==null;}
+function startNewGame(){
+gameState=initState();
+document.getElementById('title-screen').style.display='none';
+document.getElementById('ending-screen').style.display='none';
+document.getElementById('game-screen').style.display='block';
+document.getElementById('story-content').innerHTML='';
+switchPanel('story');
+renderStory();
+}
+function continueGame(){
+if(loadGame()){
+document.getElementById('title-screen').style.display='none';
+document.getElementById('game-screen').style.display='block';
+switchPanel('story');
+renderStory();
+notify('读取存档成功！','success');
+}else{notify('没有找到存档！','warning');}
+}
+function confirmRestart(){if(confirm('确定要重新开始吗？当前进度将丢失（除非已保存）。')){startNewGame();}}
+function backToTitle(){document.getElementById('ending-screen').style.display='none';document.getElementById('game-screen').style.display='none';document.getElementById('title-screen').style.display='flex';updateContinueButton();}
+function showAbout(){alert('《灵脉复苏》\n\n修仙界的灵脉正在枯萎，你作为凌霄宗大师姐，带领三位师弟踏上寻找灵眼的旅途。\n\n游戏特色：\n• 丰富的剧情分支，你的每个选择都影响结局\n• 三位性格各异的师弟，好感度系统\n• 完整的战斗、背包、商城、任务系统\n• 多种结局等你探索\n\n操作：点击选项推进剧情，左侧菜单查看各面板。');}
+function updateContinueButton(){document.getElementById('continue-btn').disabled=!hasSave();}
+window.onload=function(){updateContinueButton();};
+</script>
+</body>
+</html>
